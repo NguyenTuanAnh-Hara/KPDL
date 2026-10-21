@@ -95,7 +95,7 @@
     \node[anchor=east, align=right, text width=10cm] at ([xshift=-4.1cm,yshift=0.3cm]current page.east)
       {{\titlefont\color{tieude}\fontsize{30}{34}\selectfont K-Nearest\\[2pt] Neighbors (KNN)}\\[10pt]
        {\large\color{gray} Thuật toán K láng giềng gần nhất}\\[2pt]
-       {\normalsize\color{gray} và ứng dụng chẩn đoán khối u vú}\\[14pt]
+       {\normalsize\color{gray} và ứng dụng phân loại hoa Iris}\\[14pt]
        {\small\color{gray} Học phần: Khai phá dữ liệu}\\[2pt]
        {\small\color{gray} Giảng viên hướng dẫn: \gvhd}\\[6pt]
        {\footnotesize\color{gray} Nguyễn Tuấn Anh -- 23010575}\\
@@ -115,11 +115,11 @@
 \begin{columns}[c,totalwidth=\textwidth]
 \begin{column}{0.56\textwidth}
 \begin{itemize}\setlength\itemsep{0.6em}
-  \item Bài toán: phân lớp một khối u mới là \hl{lành tính} hay \hl{ác tính}
-  \item Suy luận dựa trên ca tương tự trong chẩn đoán y khoa:
+  \item Bài toán: xác định loài của một bông hoa Iris mới -- \hl{Setosa}, \hl{Versicolor} hay \hl{Virginica}
+  \item Cách tiếp cận của nhà thực vật học:
   \begin{itemize}
-    \item Đối chiếu với các ca đã có kết luận \textbf{tương đồng nhất}
-    \item Xem xét kết luận của các ca tương đồng đó
+    \item Đối chiếu với các mẫu đã biết loài có kích thước \textbf{tương đồng nhất}
+    \item Xem xét loài của các mẫu tương đồng đó
     \item Kết luận theo \textbf{đa số}
   \end{itemize}
   \item Hình thức hóa quá trình này thành thuật toán $\Rightarrow$ \hx{KNN}
@@ -128,10 +128,10 @@
 \begin{column}{0.4\textwidth}
 \centering
 \begin{tikzpicture}[font=\small]
-  \foreach \i/\c in {0/red,1/red,2/xanh} \node[draw=gray,fill=white,minimum width=1.3cm,minimum height=0.8cm] (h\i) at (0,-\i*1.0) {\textcolor{\c}{Ca cũ \the\numexpr\i+1\relax}};
-  \node[draw=tieude,very thick,minimum width=1.4cm,minimum height=0.9cm] (m) at (2.6,-1) {\textbf{Ca mới ?}};
+  \foreach \i/\c in {0/red,1/red,2/xanh} \node[draw=gray,fill=white,minimum width=1.3cm,minimum height=0.8cm] (h\i) at (0,-\i*1.0) {\textcolor{\c}{Mẫu \the\numexpr\i+1\relax}};
+  \node[draw=tieude,very thick,minimum width=1.4cm,minimum height=0.9cm] (m) at (2.6,-1) {\textbf{Hoa mới ?}};
   \foreach \i in {0,1,2} \draw[-{Stealth},gray] (m.west) -- (h\i.east);
-  \node[align=center,font=\scriptsize] at (1.3,-2.9) {đối chiếu với các ca\\tương đồng nhất};
+  \node[align=center,font=\scriptsize] at (1.3,-2.9) {đối chiếu với các mẫu\\tương đồng nhất};
 \end{tikzpicture}
 \end{column}
 \end{columns}
@@ -164,7 +164,7 @@
     \item Lớp có nhiều phiếu nhất là nhãn dự đoán
   \end{itemize}
   \item Không xây dựng mô hình tường minh, chỉ lưu trữ dữ liệu
-  \item Ứng dụng: chẩn đoán khối u vú (Breast Cancer Wisconsin)
+  \item Thực nghiệm: phân loại hoa Iris (Fisher, 1936)
 \end{itemize}
 \end{column}
 \begin{column}{0.48\textwidth}
@@ -228,9 +228,9 @@
 \begin{itemize}\setlength\itemsep{0.6em}
   \item Lớp có nhiều phiếu nhất $\equiv$ lớp có \textbf{xác suất hậu nghiệm lớn nhất}
   \item KNN xấp xỉ \hl{bộ phân lớp Bayes} -- bộ phân lớp có xác suất sai nhỏ nhất
-  \item \textbf{Ví dụ}: $K = 11$, có 8 láng giềng ác tính
+  \item \textbf{Ví dụ} (thực nghiệm): $K = 19$, có 12 láng giềng Virginica
   \begin{itemize}
-    \item $P(\text{ác tính}) \approx 8/11 = 0{,}73$ \quad $\Rightarrow$ dự đoán \hl{ác tính}
+    \item $P(\text{Virginica}) \approx 12/19 = 0{,}63$ \quad $\Rightarrow$ dự đoán \hl{Virginica}
   \end{itemize}
 \end{itemize}
 \end{frame}
@@ -242,8 +242,8 @@
 \renewcommand{\arraystretch}{1.25}
 \begin{tabular}{@{}ll@{}}
 \rowcolor{bang}\textbf{Ký hiệu} & \textbf{Ý nghĩa}\\
-$n$ & số mẫu huấn luyện (455)\\
-$d$ & số đặc trưng (30)\\
+$n$ & số mẫu huấn luyện (120)\\
+$d$ & số đặc trưng (2)\\
 $x_i, y_i$ & đặc trưng, nhãn mẫu thứ $i$\\
 $x$ & điểm truy vấn\\
 $K$ & số láng giềng\\
@@ -304,7 +304,7 @@ F & (6; 4) & \textcolor{xanh}{Xanh}\\
 \begin{itemize}\setlength\itemsep{0.2em}
   \item Khởi tạo \textbf{K = 3}, độ đo khoảng cách \textbf{Euclid}
   \item \textbf{Chuẩn hóa} đặc trưng về cùng thang đo (ví dụ có cùng miền giá trị nên không cần)
-  \item Dữ liệu thực: đặc trưng diện tích (143 -- 2501) chi phối đặc trưng độ trơn (0,05 -- 0,16)
+  \item Dữ liệu thực (Wine): proline (278 -- 1680) chi phối nồng độ cồn (11 -- 14,8)
 \end{itemize}
 \centering\includegraphics[width=0.9\linewidth]{h2_chuan_hoa.png}
 \end{frame}
@@ -389,17 +389,17 @@ Cosine & $1 - \frac{x\cdot z}{\|x\|\,\|z\|}$ & Đo độ lệch về hướng, k
 
 \begin{frame}{Chuẩn hóa dữ liệu}
 \begin{itemize}\setlength\itemsep{0.35em}
-  \item Đặc trưng có \hl{miền giá trị lớn chi phối khoảng cách}: diện tích (hàng nghìn) so với độ trơn (0,1)
+  \item Đặc trưng có \hl{miền giá trị lớn chi phối khoảng cách}: thu nhập (100 -- 1000) so với tuổi (18 -- 60)
 \end{itemize}
 \hop{Min-Max: $x' = \dfrac{x - \min}{\max - \min}$ \qquad Z-score: $x' = \dfrac{x - \mu}{\sigma}$ \quad ($\mu$: trung bình, $\sigma$: độ lệch chuẩn)}
 \begin{itemize}\setlength\itemsep{0.35em}
   \item Ước lượng min, max, $\mu$, $\sigma$ \textbf{chỉ trên tập huấn luyện} (tránh rò rỉ dữ liệu)
-  \item \textbf{Ví dụ}: A = (500; 0,080) lành, B = (560; 0,130) ác, Q = (540; 0,085)
+  \item \textbf{Ví dụ} (tuổi; thu nhập triệu đồng): A = (25; 300) không mua, B = (44; 340) mua, Q = (43; 305)
   \begin{itemize}
-    \item Không chuẩn hóa: $d(Q,A) \approx 40$, $d(Q,B) \approx 20$ $\Rightarrow$ \hl{ác tính}
-    \item Chuẩn hóa Min-Max: $d(Q,A) \approx 0{,}048$, $d(Q,B) \approx 0{,}406$ $\Rightarrow$ \hx{lành tính}
+    \item Không chuẩn hóa: $d(Q,A) \approx 18{,}7$, $d(Q,B) \approx 35{,}0$ $\Rightarrow$ \hl{không mua}
+    \item Chuẩn hóa Min-Max: $d(Q,A) \approx 0{,}429$, $d(Q,B) \approx 0{,}046$ $\Rightarrow$ \hx{mua}
   \end{itemize}
-  \item Chuẩn hóa làm \textbf{đảo ngược kết quả} vì độ trơn của Q rất gần với A
+  \item Chuẩn hóa làm \textbf{đảo ngược kết quả} vì tuổi của Q gần như trùng với B
 \end{itemize}
 \end{frame}
 
@@ -482,137 +482,111 @@ Cosine & $1 - \frac{x\cdot z}{\|x\|\,\|z\|}$ & Đo độ lệch về hướng, k
 % =====================================================================
 \mucluc{4}
 
-\begin{frame}{Dữ liệu và cách thực hiện}
-\begin{columns}[T,totalwidth=\textwidth]
-\begin{column}{0.47\textwidth}
-\textbf{Breast Cancer Wisconsin}
-\begin{itemize}\setlength\itemsep{0.3em}
-  \item \hx{569} mẫu, \hx{30} đặc trưng định lượng (bán kính, diện tích, độ trơn\ldots)
-  \item \hx{212} ác tính, \hx{357} lành tính
-  \item Có sẵn trong scikit-learn
-  \item Miền giá trị chênh lệch lớn $\Rightarrow$ phù hợp đánh giá vai trò chuẩn hóa
+\begin{frame}{Dữ liệu Iris}
+\begin{columns}[c,totalwidth=\textwidth]
+\begin{column}{0.44\textwidth}
+\begin{itemize}\setlength\itemsep{0.45em}
+  \item Bộ dữ liệu kinh điển (Fisher, 1936), có sẵn trong scikit-learn
+  \item \hx{150} bông hoa, \hx{3} loài, mỗi loài 50 bông
+  \item Sử dụng \hx{2} đặc trưng: chiều dài và chiều rộng \textbf{cánh hoa} (cm)
+  \item Setosa \textbf{tách biệt}; Versicolor và Virginica \textbf{chồng lấn một phần}
+  \item Cùng đơn vị cm $\Rightarrow$ \textbf{không cần chuẩn hóa}
 \end{itemize}
 \end{column}
-\begin{column}{0.51\textwidth}
-\textbf{Cách thực hiện}
-\begin{enumerate}\setlength\itemsep{0.3em}
-  \item Tập huấn luyện 80\% (455), tập kiểm tra 20\% (114)
-  \item Chuẩn hóa Z-score
-  \item Lựa chọn K bằng kiểm định chéo 10-fold
-  \item Đánh giá trên tập kiểm tra
-  \item So sánh với 4 thuật toán khác
-\end{enumerate}
+\begin{column}{0.54\textwidth}
+  \includegraphics[width=\linewidth]{tn_du_lieu.png}
 \end{column}
 \end{columns}
-\vspace{0.6em}
+\end{frame}
+
+\begin{frame}{Phương pháp và cài đặt}
+\begin{enumerate}\setlength\itemsep{0.25em}
+  \item Tập huấn luyện 80\% (120 mẫu), tập kiểm tra 20\% (30 mẫu), phân tầng theo loài
+  \item Lựa chọn K bằng \textbf{kiểm định chéo 10-fold} trên tập huấn luyện
+  \item Phân lớp 30 mẫu kiểm tra bằng KNN tự cài đặt
+  \item Đánh giá: \textbf{độ chính xác} và \textbf{ma trận nhầm lẫn}
+\end{enumerate}
+\vspace{0.3em}
+\colorbox{bang}{\parbox{0.98\linewidth}{\ttfamily\footnotesize\vspace{3pt}%
+def knn\_predict(X\_train, y\_train, x, k):\\
+\hspace*{1em}d = np.sqrt(((X\_train - x)**2).sum(axis=1)) \hspace{1em}\textcolor{gray}{\# Bước 2}\\
+\hspace*{1em}idx = np.argsort(d)[:k] \hspace{9.6em}\textcolor{gray}{\# Bước 3}\\
+\hspace*{1em}return Counter(y\_train[idx]).most\_common(1)[0][0] \textcolor{gray}{\# Bước 4}\vspace{3pt}}}
 \begin{itemize}
-  \item Độ đo đánh giá (lớp dương: ác tính):
-  \[\text{Accuracy} = \tfrac{TP+TN}{TP+TN+FP+FN} \qquad \text{Precision} = \tfrac{TP}{TP+FP} \qquad \text{Recall} = \tfrac{TP}{TP+FN}\]
+  \item Kiểm chứng: trùng khớp \hl{30/30} dự đoán với KNeighborsClassifier (scikit-learn)
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Cài đặt KNN từ đầu}
-\colorbox{bang}{\parbox{0.98\linewidth}{\ttfamily\footnotesize\vspace{3pt}
-class KNNScratch:\\
-\hspace*{1em}def \_\_init\_\_(self, k=5):\\
-\hspace*{2em}self.k = k \hspace{8.6em}\textcolor{gray}{\# Bước 1: khởi tạo K}\\[2pt]
-\hspace*{1em}def fit(self, X, y): \hspace{5.3em}\textcolor{gray}{\# huấn luyện: lưu trữ dữ liệu}\\
-\hspace*{2em}self.X, self.y = X, y\\[2pt]
-\hspace*{1em}def predict\_one(self, x):\\
-\hspace*{2em}d = np.sqrt(((self.X - x)**2).sum(axis=1)) \hspace{0.5em}\textcolor{gray}{\# Bước 2: khoảng cách}\\
-\hspace*{2em}idx = np.argsort(d)[:self.k] \hspace{5.2em}\textcolor{gray}{\# Bước 3: K láng giềng}\\
-\hspace*{2em}return Counter(self.y[idx]).most\_common(1)[0][0] \textcolor{gray}{\# Bước 4}\vspace{3pt}}}
-\vspace{0.6em}
-\begin{itemize}
-  \item Kiểm chứng: kết quả trùng khớp \hl{114/114} mẫu với KNeighborsClassifier (scikit-learn)
-\end{itemize}
-\end{frame}
-
-\begin{frame}{Thí nghiệm 1: lựa chọn K}
+\begin{frame}{Lựa chọn tham số K}
 \begin{columns}[c,totalwidth=\textwidth]
 \begin{column}{0.6\textwidth}
-  \includegraphics[width=\linewidth]{tn1_chon_k.png}
+  \includegraphics[width=\linewidth]{tn_chon_k.png}
 \end{column}
 \begin{column}{0.38\textwidth}
 \begin{itemize}\setlength\itemsep{0.5em}\small
-  \item \textbf{K = 1}: 100\% trên tập huấn luyện, 94,73\% kiểm định chéo $\Rightarrow$ \hl{quá khớp}
-  \item K tăng: khoảng cách giữa hai đường thu hẹp
-  \item K lớn: cả hai cùng giảm $\Rightarrow$ \hl{chưa khớp}
-  \item Lựa chọn \hx{K = 11} (96,93\%)
+  \item \textbf{K = 1}: 99,17\% trên tập huấn luyện, 94,17\% kiểm định chéo $\Rightarrow$ \hl{quá khớp}
+  \item K tăng: độ chính xác ổn định quanh 95,8\% -- 96,7\%
+  \item Lớp tách biệt tốt $\Rightarrow$ ít nhạy với K
+  \item Lựa chọn \hx{K = 19} (96,67\%)
 \end{itemize}
 \end{column}
 \end{columns}
 \end{frame}
 
-\begin{frame}{Thí nghiệm 2: chuẩn hóa}
-\begin{columns}[c,totalwidth=\textwidth]
-\begin{column}{0.5\textwidth}
-  \includegraphics[width=\linewidth]{tn2_chuan_hoa.png}
-\end{column}
-\begin{column}{0.48\textwidth}
-\begin{itemize}\setlength\itemsep{0.6em}
-  \item Không chuẩn hóa: 93,86\% (7 mẫu sai)
-  \item Chuẩn hóa Z-score: \hx{97,37\%} (3 mẫu sai)
-  \item Nguyên nhân: đặc trưng có miền giá trị lớn \textbf{chi phối} khoảng cách Euclid
-  \item $\Rightarrow$ \hl{Chuẩn hóa là bước tiền xử lý bắt buộc}
-\end{itemize}
-\end{column}
-\end{columns}
-\end{frame}
-
-\begin{frame}{Thí nghiệm 3: mô hình cuối}
+\begin{frame}{Kết quả trên tập kiểm tra}
 \begin{columns}[c,totalwidth=\textwidth]
 \begin{column}{0.46\textwidth}
-  \includegraphics[width=\linewidth]{tn3_ma_tran_nham_lan.png}
+  \includegraphics[width=\linewidth]{tn_ma_tran.png}
 \end{column}
 \begin{column}{0.52\textwidth}
-\begin{itemize}\setlength\itemsep{0.5em}
-  \item Phân lớp đúng \hx{111/114} mẫu $\Rightarrow$ Accuracy \hx{97,37\%}
-  \item \textbf{FP = 0} (dương tính giả) $\Rightarrow$ Precision 100\%
-  \item \textbf{FN = 3} (âm tính giả) $\Rightarrow$ Recall 92,86\%
-  \item Lớp ác tính là lớp thiểu số (37\%) nên gần biên quyết định, láng giềng lành tính chiếm đa số
-  \item Cải thiện Recall: \hl{điều chỉnh ngưỡng quyết định}
+\begin{itemize}\setlength\itemsep{0.55em}
+  \item Phân lớp đúng \hx{29/30} bông hoa
+  \item Accuracy = \hx{96,67\%}
+  \item Setosa: 10/10, Virginica: 10/10
+  \item Versicolor: 9/10 -- \hl{1 bông bị nhầm thành Virginica}
 \end{itemize}
 \end{column}
 \end{columns}
 \end{frame}
 
-\begin{frame}{Thí nghiệm 4: so sánh}
+\begin{frame}{Vùng phân lớp và phân tích sai số}
 \begin{columns}[c,totalwidth=\textwidth]
 \begin{column}{0.56\textwidth}
-  \includegraphics[width=\linewidth]{tn4_so_sanh.png}
+  \includegraphics[width=\linewidth]{tn_vung_phan_lop.png}
 \end{column}
 \begin{column}{0.42\textwidth}
 \begin{itemize}\setlength\itemsep{0.5em}\small
-  \item KNN \hx{xếp thứ 3/5}, thấp hơn Hồi quy Logistic và SVM \textbf{1 mẫu}
-  \item Dữ liệu gần như tách được tuyến tính $\Rightarrow$ mô hình tuyến tính có lợi thế
-  \item Vượt Naive Bayes (giả định độc lập bị vi phạm) và Cây quyết định (quá khớp)
+  \item Mẫu sai: cánh hoa 5,0 cm $\times$ 1,7 cm, nằm tại \textbf{vùng chồng lấn} Versicolor -- Virginica
+  \item 19 láng giềng: \hl{12 Virginica}, 7 Versicolor $\Rightarrow$ biểu quyết ra Virginica
+  \item Mẫu có số đo giống loài khác hơn loài của chính nó -- giới hạn của dữ liệu, không phải lỗi cài đặt
 \end{itemize}
 \end{column}
 \end{columns}
 \end{frame}
 
 \begin{frame}{Tổng hợp kết quả}
-\centering\footnotesize
+\centering\small
 \renewcommand{\arraystretch}{1.6}
-\begin{tabular}{lll}
-\rowcolor{bang}\textbf{Thí nghiệm} & \textbf{Kết quả} & \textbf{Nhận xét}\\
-1. Lựa chọn K & K = 11 & K nhỏ quá khớp, K lớn chưa khớp\\
-2. Chuẩn hóa & 93,86\% → \hx{97,37\%} & Chuẩn hóa là bắt buộc\\
-3. Mô hình cuối & Accuracy 97,37\%, FN = 3 & Hiệu quả chẩn đoán cao\\
-4. So sánh & Xếp thứ 3/5 & Cạnh tranh dù đơn giản\\
+\begin{tabular}{ll}
+\rowcolor{bang}\textbf{Nội dung} & \textbf{Kết quả}\\
+Tham số K & K = 19 (kiểm định chéo 96,67\%)\\
+Độ chính xác trên tập kiểm tra & \hx{96,67\%} (29/30 mẫu)\\
+Mẫu phân lớp sai & 1 Versicolor $\to$ Virginica (vùng chồng lấn)\\
+Kiểm chứng cài đặt & Trùng khớp 30/30 với scikit-learn\\
 \end{tabular}
+\vspace{0.6em}
+\begin{itemize}
+  \item KNN đạt độ chính xác cao với thuật toán đơn giản, không cần huấn luyện
+  \item Sai số chỉ xuất hiện tại vùng chồng lấn giữa hai lớp
+\end{itemize}
 \end{frame}
 
-% =====================================================================
-% 5. KẾT LUẬN
-% =====================================================================
 \mucluc{5}
 
 \begin{frame}{Kết luận}
 \begin{itemize}\setlength\itemsep{0.45em}
   \item \textbf{KNN}: phân lớp phi tham số dựa trên \hl{tương đồng cục bộ} và \hl{biểu quyết đa số}
-  \item Chẩn đoán khối u vú: K = 11, chuẩn hóa Z-score $\Rightarrow$ Accuracy \hx{97,37\%}
+  \item Phân loại hoa Iris: K = 19 $\Rightarrow$ Accuracy \hx{96,67\%} (29/30 mẫu)
   \item \textbf{Điểm mạnh}
   \begin{itemize}
     \item Đơn giản, có khả năng diễn giải
@@ -634,7 +608,7 @@ class KNNScratch:\\
   \item Cover, T., Hart, P. (1967). Nearest neighbor pattern classification. \textit{IEEE Trans. Information Theory}.
   \item Dudani, S. A. (1976). The distance-weighted k-nearest-neighbor rule. \textit{IEEE Trans. SMC}.
   \item Wu, X. et al. (2008). Top 10 algorithms in data mining. \textit{Knowledge and Information Systems}.
-  \item Street, W. N., Wolberg, W. H., Mangasarian, O. L. (1993). Nuclear feature extraction for breast tumor diagnosis. \textit{SPIE}.
+  \item Fisher, R. A. (1936). The use of multiple measurements in taxonomic problems. \textit{Annals of Eugenics}.
   \item Pedregosa, F. et al. (2011). Scikit-learn: Machine Learning in Python. \textit{JMLR}.
   \item Han, J., Kamber, M., Pei, J. (2011). \textit{Data Mining: Concepts and Techniques}. Morgan Kaufmann.
   \item Trịnh Thành. \textit{Bài giảng Khai phá dữ liệu}. Trường CNTT Phenikaa.

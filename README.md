@@ -1,7 +1,7 @@
 # Bài tập lớn Khai phá dữ liệu – Thuật toán K-Nearest Neighbors (KNN)
 
-Tìm hiểu thuật toán KNN và thực nghiệm chẩn đoán khối u vú lành tính / ác tính trên bộ dữ liệu
-**Breast Cancer Wisconsin (Diagnostic)** (569 mẫu, 30 đặc trưng).
+Tìm hiểu thuật toán KNN và thực nghiệm phân loại hoa **Iris** (150 bông hoa, 3 loài)
+theo chiều dài và chiều rộng cánh hoa.
 
 ## Cấu trúc thư mục
 
@@ -18,7 +18,7 @@ Yêu cầu Python 3.8 trở lên. Dữ liệu có sẵn trong scikit-learn, khô
 
 ```bash
 pip install -r requirements.txt
-python 2_MaNguon/knn_experiment.py   # 4 thí nghiệm -> 2_MaNguon/results.json + figures/ (~10 giây)
+python 2_MaNguon/knn_experiment.py   # thực nghiệm Iris -> 2_MaNguon/results.json + figures/ (vài giây)
 python 2_MaNguon/hinh_minh_hoa.py    # hình minh họa từng bước của thuật toán
 ```
 
@@ -31,9 +31,9 @@ Máy cá nhân (TeX Live hoặc MiKTeX): `cd 3_Slide && latexmk -xelatex main.te
 
 ## Kết quả chính
 
-| Thí nghiệm | Kết quả |
+| Nội dung | Kết quả |
 | --- | --- |
-| 1. Chọn K (kiểm định chéo 10-fold, K lẻ) | K = 11, độ chính xác 96,93% |
-| 2. Chuẩn hóa dữ liệu | 93,86% → 97,37% |
-| 3. Mô hình cuối | Đúng 111/114 ca, bỏ sót 3 ca ác tính, không báo nhầm ca nào |
-| 4. So sánh 5 thuật toán | KNN xếp thứ 3, sau Hồi quy Logistic và SVM (98,25%) |
+| Dữ liệu | Iris: 120 mẫu huấn luyện, 30 mẫu kiểm tra, 2 đặc trưng cánh hoa |
+| Lựa chọn K (kiểm định chéo 10-fold, K lẻ) | K = 19, độ chính xác 96,67% |
+| Độ chính xác trên tập kiểm tra | 96,67% (29/30 mẫu) |
+| Mẫu phân lớp sai | 1 bông Versicolor bị nhầm thành Virginica (vùng chồng lấn) |

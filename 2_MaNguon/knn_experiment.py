@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 """
 Bài tập lớn Khai phá dữ liệu - Thuật toán K-Nearest Neighbors (KNN)
-Thực nghiệm: chẩn đoán khối u vú lành tính / ác tính (Breast Cancer Wisconsin).
+Thực nghiệm: phân loại hoa Iris theo chiều dài và chiều rộng cánh hoa.
 
-4 thí nghiệm:
-  TN1. Chọn K tốt nhất bằng kiểm định chéo 10-fold
-  TN2. So sánh có và không chuẩn hóa dữ liệu
-  TN3. Đánh giá mô hình cuối cùng (ma trận nhầm lẫn)
-  TN4. So sánh KNN với 4 thuật toán phân lớp khác
+Các bước:
+  1. Đọc dữ liệu, chia tập huấn luyện (80%) / tập kiểm tra (20%)
+  2. Cài đặt KNN theo 4 bước của thuật toán
+  3. Lựa chọn K bằng kiểm định chéo 10-fold
+  4. Đánh giá trên tập kiểm tra: độ chính xác, ma trận nhầm lẫn, vùng phân lớp
 
 Chạy:  python knn_experiment.py        (cài thư viện: pip install -r requirements.txt)
 Kết quả: results.json và các hình trong thư mục figures/ (nằm cạnh file này).
@@ -21,16 +21,11 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.datasets import load_breast_cancer
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, recall_score, f1_score
+from matplotlib.colors import ListedColormap
+from sklearn.datasets import load_iris
+from sklearn.metrics import accuracy_score, confusion_matrix
 from sklearn.model_selection import StratifiedKFold, cross_val_score, train_test_split
-from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler
-from sklearn.svm import SVC
-from sklearn.tree import DecisionTreeClassifier
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 FIG = os.path.join(BASE, "figures")
@@ -40,157 +35,130 @@ try:
 except AttributeError:
     pass
 plt.rcParams.update({"font.size": 12})
-BLUE, RED, GREY = "#1f77b4", "#d62728", "#9e9e9e"
+TEN_LOP = ["Setosa", "Versicolor", "Virginica"]
+MAU = ["#2ca02c", "#1f77b4", "#d62728"]
+DAU = ["o", "s", "^"]
 
 
 # =============================================================================
-# KNN TỰ CÀI ĐẶT theo 4 bước: khởi tạo - tính khoảng cách - xác định láng giềng - biểu quyết
+# 1. DỮ LIỆU: 150 bông hoa Iris, dùng 2 đặc trưng về cánh hoa (đơn vị cm)
 # =============================================================================
-class KNNScratch:
-    def __init__(self, k=5):
-        self.k = k                                        # Bước 1: khởi tạo tham số K
-
-    def fit(self, X, y):                                  # Huấn luyện: lưu trữ dữ liệu
-        self.X = np.asarray(X, dtype=float)
-        self.y = np.asarray(y)
-        return self
-
-    def predict_one(self, x):
-        d = np.sqrt(((self.X - x) ** 2).sum(axis=1))      # Bước 2: tính khoảng cách Euclid
-        idx = np.argsort(d)[: self.k]                     # Bước 3: xác định K láng giềng
-        return Counter(self.y[idx]).most_common(1)[0][0]  # Bước 4: biểu quyết đa số
-
-    def predict(self, X):
-        return np.array([self.predict_one(x) for x in np.asarray(X, dtype=float)])
-
-
-# =============================================================================
-# DỮ LIỆU
-# =============================================================================
-data = load_breast_cancer()                 # có sẵn trong scikit-learn, không cần tải
-X, y = data.data, data.target               # y: 0 = ác tính, 1 = lành tính
+iris = load_iris()                                  # có sẵn trong scikit-learn
+X = iris.data[:, [2, 3]]                            # chiều dài, chiều rộng cánh hoa
+y = iris.target                                     # 0 Setosa, 1 Versicolor, 2 Virginica
 X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.2, stratify=y, random_state=42)
+
+
+# =============================================================================
+# 2. KNN TỰ CÀI ĐẶT theo 4 bước của thuật toán
+# =============================================================================
+def knn_predict(X_train, y_train, x, k):
+    d = np.sqrt(((X_train - x) ** 2).sum(axis=1))      # Bước 2: tính khoảng cách Euclid
+    idx = np.argsort(d)[:k]                             # Bước 3: xác định K láng giềng gần nhất
+    return Counter(y_train[idx]).most_common(1)[0][0]   # Bước 4: biểu quyết đa số
+
+
+# =============================================================================
+# 3. LỰA CHỌN K bằng kiểm định chéo 10-fold trên tập huấn luyện (Bước 1)
+# =============================================================================
 cv = StratifiedKFold(n_splits=10, shuffle=True, random_state=42)
-
-R = {"data": {"n": int(len(y)), "d": int(X.shape[1]), "ac_tinh": int((y == 0).sum()),
-              "lanh_tinh": int((y == 1).sum()), "train": int(len(y_tr)), "test": int(len(y_te))}}
-
-# Kiểm tra KNN tự cài đặt cho kết quả giống thư viện scikit-learn
-sc = StandardScaler().fit(X_tr)
-p1 = KNNScratch(k=5).fit(sc.transform(X_tr), y_tr).predict(sc.transform(X_te))
-p2 = KNeighborsClassifier(n_neighbors=5).fit(sc.transform(X_tr), y_tr).predict(sc.transform(X_te))
-R["tu_cai_dat_trung_khop"] = int((p1 == p2).sum())
-
-
-def knn(k, scale=True):
-    """Mô hình KNN; nếu scale=True thì chuẩn hóa Z-score trước (fit trên tập train)."""
-    m = KNeighborsClassifier(n_neighbors=k)
-    return make_pipeline(StandardScaler(), m) if scale else m
-
-
-# =============================================================================
-# TN1. CHỌN K: thử K = 1..30, đo độ chính xác bằng kiểm định chéo 10-fold
-# =============================================================================
 Ks = list(range(1, 31))
-acc_train, acc_cv = [], []
-for k in Ks:
-    acc_cv.append(cross_val_score(knn(k), X_tr, y_tr, cv=cv).mean())
-    acc_train.append(knn(k).fit(X_tr, y_tr).score(X_tr, y_tr))
-best_k = max([k for k in Ks if k % 2 == 1], key=lambda k: acc_cv[k - 1])   # chỉ xét K lẻ
-R["TN1"] = {"K": Ks, "train": acc_train, "cv": acc_cv, "best_k": best_k}
-
-plt.figure(figsize=(8, 4.3))
-plt.plot(Ks, acc_train, "o-", ms=4, color=GREY, label="Tập huấn luyện")
-plt.plot(Ks, acc_cv, "s-", ms=5, color=BLUE, label="Kiểm định chéo 10-fold")
-plt.axvline(best_k, ls="--", color=RED)
-plt.annotate(f"K = {best_k}\n{acc_cv[best_k - 1]:.1%}".replace(".", ","), (best_k, acc_cv[best_k - 1]),
-             xytext=(best_k + 2.5, 0.99), color=RED, arrowprops=dict(arrowstyle="->", color=RED))
-plt.text(1, 0.926, "← K nhỏ: quá khớp", color=GREY)
-plt.text(30, 0.926, "K lớn: chưa khớp →", color=GREY, ha="right")
-plt.xlabel("Số láng giềng K"); plt.ylabel("Độ chính xác")
-plt.title("TN1. Lựa chọn tham số K")
-plt.xticks(range(1, 31, 2)); plt.ylim(0.92, 1.005); plt.grid(alpha=.3); plt.legend(loc="upper right", fontsize=10)
-plt.tight_layout(); plt.savefig(os.path.join(FIG, "tn1_chon_k.png"), dpi=200); plt.close()
+acc_cv = [cross_val_score(KNeighborsClassifier(n_neighbors=k), X_tr, y_tr, cv=cv).mean() for k in Ks]
+acc_train = [KNeighborsClassifier(n_neighbors=k).fit(X_tr, y_tr).score(X_tr, y_tr) for k in Ks]
+k_le = [k for k in Ks if k % 2 == 1]
+best_k = max(k_le, key=lambda k: (round(acc_cv[k - 1], 6), -k))   # K lẻ có độ chính xác cao nhất (nhỏ nhất nếu bằng nhau)
 
 # =============================================================================
-# TN2. CÓ và KHÔNG chuẩn hóa (cùng K tốt nhất), đo trên tập test
+# 4. ĐÁNH GIÁ trên tập kiểm tra
 # =============================================================================
-acc_raw = knn(best_k, scale=False).fit(X_tr, y_tr).score(X_te, y_te)
-acc_std = knn(best_k, scale=True).fit(X_tr, y_tr).score(X_te, y_te)
-n_te = len(y_te)
-R["TN2"] = {"khong_chuan_hoa": acc_raw, "co_chuan_hoa": acc_std,
-            "sai_khong": int(round((1 - acc_raw) * n_te)), "sai_co": int(round((1 - acc_std) * n_te))}
+y_pred = np.array([knn_predict(X_tr, y_tr, x, best_k) for x in X_te])
+y_skl = KNeighborsClassifier(n_neighbors=best_k).fit(X_tr, y_tr).predict(X_te)
+acc = accuracy_score(y_te, y_pred)
+cm = confusion_matrix(y_te, y_pred, labels=[0, 1, 2])
+sai = np.where(y_pred != y_te)[0]
+chi_tiet_sai = []
+for i in sai:
+    d = np.sqrt(((X_tr - X_te[i]) ** 2).sum(axis=1))
+    phieu = np.bincount(y_tr[np.argsort(d)[:best_k]], minlength=3)
+    chi_tiet_sai.append({"canh_hoa_cm": X_te[i].tolist(), "that": TEN_LOP[y_te[i]],
+                         "du_doan": TEN_LOP[y_pred[i]], "phieu": dict(zip(TEN_LOP, phieu.tolist()))})
 
-plt.figure(figsize=(6.5, 4.3))
-vals = [acc_raw, acc_std]
-bars = plt.bar(["Không chuẩn hóa", "Có chuẩn hóa"], vals, color=[GREY, BLUE], width=0.55)
-for b, v, s in zip(bars, vals, [R["TN2"]["sai_khong"], R["TN2"]["sai_co"]]):
-    plt.text(b.get_x() + b.get_width() / 2, v + 0.004, f"{v:.2%}\n({s}/{n_te} mẫu sai)".replace(".", ","),
-             ha="center", va="bottom", fontsize=12)
-plt.ylim(0.85, 1.02); plt.ylabel("Độ chính xác trên tập test")
-plt.title(f"TN2. Ảnh hưởng của chuẩn hóa (K = {best_k})")
-plt.grid(axis="y", alpha=.3)
-plt.tight_layout(); plt.savefig(os.path.join(FIG, "tn2_chuan_hoa.png"), dpi=200); plt.close()
-
-# =============================================================================
-# TN3. MÔ HÌNH CUỐI: chuẩn hóa + KNN (K tốt nhất), ma trận nhầm lẫn trên tập test
-# =============================================================================
-y_pred = knn(best_k).fit(X_tr, y_tr).predict(X_te)
-cm = confusion_matrix(y_te, y_pred, labels=[0, 1])        # hàng: thực tế, cột: dự đoán
-R["TN3"] = {"accuracy": accuracy_score(y_te, y_pred), "cm": cm.tolist(),
-            "precision_ac": precision_score(y_te, y_pred, pos_label=0),
-            "recall_ac": recall_score(y_te, y_pred, pos_label=0),
-            "f1_ac": f1_score(y_te, y_pred, pos_label=0)}
-
-fig, ax = plt.subplots(figsize=(5.4, 4.6))
-ax.imshow([[1, 0], [0, 1]], cmap="Blues", vmin=-0.6, vmax=1.6)
-txt = [["TP\n", "FN (âm tính giả)\n"], ["FP (dương tính giả)\n", "TN\n"]]
-for i in range(2):
-    for j in range(2):
-        ax.text(j, i, f"{txt[i][j]}{cm[i, j]}", ha="center", va="center", fontsize=14,
-                color="white" if i == j else "black")
-ax.set_xticks([0, 1]); ax.set_xticklabels(["Ác tính", "Lành tính"])
-ax.set_yticks([0, 1]); ax.set_yticklabels(["Ác tính", "Lành tính"])
-ax.set_xlabel("Nhãn dự đoán"); ax.set_ylabel("Nhãn thực tế")
-ax.set_title(f"TN3. Ma trận nhầm lẫn ({n_te} mẫu kiểm tra, K = {best_k})")
-plt.tight_layout(); plt.savefig(os.path.join(FIG, "tn3_ma_tran_nham_lan.png"), dpi=200); plt.close()
-
-# =============================================================================
-# TN4. SO SÁNH KNN với 4 thuật toán khác (cùng chuẩn hóa, cùng cách chia dữ liệu)
-# =============================================================================
-models = {f"KNN (K={best_k})": KNeighborsClassifier(n_neighbors=best_k),
-          "Naive Bayes": GaussianNB(),
-          "Cây quyết định": DecisionTreeClassifier(random_state=42),
-          "Hồi quy Logistic": LogisticRegression(max_iter=5000),
-          "SVM": SVC()}
-R["TN4"] = {}
-for name, clf in models.items():
-    R["TN4"][name] = make_pipeline(StandardScaler(), clf).fit(X_tr, y_tr).score(X_te, y_te)
-
-items = sorted(R["TN4"].items(), key=lambda t: t[1])
-plt.figure(figsize=(8, 4.3))
-bars = plt.barh([n for n, _ in items], [v for _, v in items],
-                color=[BLUE if n.startswith("KNN") else GREY for n, _ in items], height=0.6)
-for b, (_, v) in zip(bars, items):
-    plt.text(v + 0.002, b.get_y() + b.get_height() / 2, f"{v:.2%}".replace(".", ","), va="center")
-plt.xlim(0.85, 1.0); plt.xlabel("Độ chính xác trên tập test")
-plt.title("TN4. So sánh với các thuật toán phân lớp"); plt.grid(axis="x", alpha=.3)
-plt.tight_layout(); plt.savefig(os.path.join(FIG, "tn4_so_sanh.png"), dpi=200); plt.close()
-
-# =============================================================================
-# LƯU KẾT QUẢ VÀ IN TÓM TẮT
-# =============================================================================
+R = {"so_mau": int(len(y)), "train": int(len(y_tr)), "test": int(len(y_te)),
+     "K": Ks, "acc_cv": acc_cv, "acc_train": acc_train, "best_k": best_k,
+     "acc_test": acc, "dung": int((y_pred == y_te).sum()), "cm": cm.tolist(),
+     "trung_khop_sklearn": int((y_pred == y_skl).sum()), "mau_sai": chi_tiet_sai}
 with open(os.path.join(BASE, "results.json"), "w", encoding="utf-8") as f:
     json.dump(R, f, ensure_ascii=False, indent=2, default=float)
 
+# =============================================================================
+# 5. HÌNH
+# =============================================================================
+def save(name):
+    plt.tight_layout(); plt.savefig(os.path.join(FIG, name), dpi=200); plt.close()
+
+
+# (a) Dữ liệu
+plt.figure(figsize=(7, 5))
+for c in range(3):
+    plt.scatter(X_tr[y_tr == c, 0], X_tr[y_tr == c, 1], color=MAU[c], marker=DAU[c], edgecolor="k",
+                s=45, alpha=.8, label=f"{TEN_LOP[c]} (huấn luyện)")
+plt.scatter(X_te[:, 0], X_te[:, 1], facecolor="none", edgecolor="k", s=140, lw=1.3, label="Mẫu kiểm tra")
+plt.xlabel("Chiều dài cánh hoa (cm)"); plt.ylabel("Chiều rộng cánh hoa (cm)")
+plt.title("Dữ liệu Iris: 150 bông hoa, 3 loài"); plt.grid(alpha=.3); plt.legend(fontsize=9)
+save("tn_du_lieu.png")
+
+# (b) Lựa chọn K
+plt.figure(figsize=(8, 4.3))
+plt.plot(Ks, acc_train, "o-", ms=4, color="#9e9e9e", label="Tập huấn luyện")
+plt.plot(Ks, acc_cv, "s-", ms=5, color="#1f77b4", label="Kiểm định chéo 10-fold")
+plt.axvline(best_k, ls="--", color="#d62728")
+plt.annotate(f"K = {best_k}\n{acc_cv[best_k - 1]:.2%}".replace(".", ","), (best_k, acc_cv[best_k - 1]),
+             xytext=(best_k + 2.5, 0.925), color="#d62728", arrowprops=dict(arrowstyle="->", color="#d62728"))
+plt.xlabel("Số láng giềng K"); plt.ylabel("Độ chính xác")
+plt.title("Lựa chọn tham số K"); plt.xticks(range(1, 31, 2)); plt.ylim(0.9, 1.005)
+plt.grid(alpha=.3); plt.legend(loc="lower left", fontsize=10)
+save("tn_chon_k.png")
+
+# (c) Ma trận nhầm lẫn
+fig, ax = plt.subplots(figsize=(5.4, 4.6))
+ax.imshow(cm, cmap="Blues", vmin=0, vmax=cm.max() * 1.15)
+for i in range(3):
+    for j in range(3):
+        ax.text(j, i, cm[i, j], ha="center", va="center", fontsize=16,
+                color="white" if cm[i, j] > cm.max() / 2 else "black")
+ax.set_xticks(range(3)); ax.set_xticklabels(TEN_LOP); ax.set_yticks(range(3)); ax.set_yticklabels(TEN_LOP)
+ax.set_xlabel("Nhãn dự đoán"); ax.set_ylabel("Nhãn thực tế")
+ax.set_title(f"Ma trận nhầm lẫn ({len(y_te)} mẫu kiểm tra, K = {best_k})")
+save("tn_ma_tran.png")
+
+# (d) Vùng phân lớp
+xx, yy = np.meshgrid(np.linspace(0.5, 7.5, 500), np.linspace(-0.2, 2.9, 500))
+Z = KNeighborsClassifier(n_neighbors=best_k).fit(X_tr, y_tr).predict(np.c_[xx.ravel(), yy.ravel()]).reshape(xx.shape)
+plt.figure(figsize=(7.5, 5))
+plt.contourf(xx, yy, Z, levels=[-0.5, 0.5, 1.5, 2.5], cmap=ListedColormap(["#d9f2d9", "#d6e6f5", "#f8d7d7"]))
+for c in range(3):
+    m = y_te == c
+    plt.scatter(X_te[m, 0], X_te[m, 1], color=MAU[c], marker=DAU[c], edgecolor="k", s=70, label=TEN_LOP[c])
+for i in sai:
+    plt.scatter(*X_te[i], s=420, facecolor="none", edgecolor="k", lw=2)
+    plt.annotate(f"Phân lớp sai: {TEN_LOP[y_te[i]]} → {TEN_LOP[y_pred[i]]}", X_te[i],
+                 xytext=(X_te[i][0] - 4.3, X_te[i][1] + 0.55), fontsize=10,
+                 arrowprops=dict(arrowstyle="->"), bbox=dict(fc="white", ec="gray"))
+plt.xlabel("Chiều dài cánh hoa (cm)"); plt.ylabel("Chiều rộng cánh hoa (cm)")
+plt.title(f"Vùng phân lớp của KNN (K = {best_k}) và {len(y_te)} mẫu kiểm tra")
+plt.legend(loc="lower right", fontsize=10)
+save("tn_vung_phan_lop.png")
+
+# =============================================================================
+# 6. TÓM TẮT
+# =============================================================================
 print("=" * 60)
-print(f"Dữ liệu: {R['data']['n']} mẫu, {R['data']['d']} đặc trưng "
-      f"({R['data']['ac_tinh']} ác tính, {R['data']['lanh_tinh']} lành tính)")
-print(f"Chia: {R['data']['train']} mẫu train, {R['data']['test']} mẫu test")
-print(f"KNN tự cài đặt trùng khớp scikit-learn: {R['tu_cai_dat_trung_khop']}/{n_te} dự đoán")
-print(f"TN1  K tốt nhất = {best_k}  (kiểm định chéo {acc_cv[best_k - 1]:.2%})")
-print(f"TN2  Không chuẩn hóa {acc_raw:.2%}  ->  Có chuẩn hóa {acc_std:.2%}")
-print(f"TN3  Phân lớp đúng {cm[0, 0] + cm[1, 1]}/{n_te} mẫu | FN (âm tính giả) {cm[0, 1]} | FP (dương tính giả) {cm[1, 0]}")
-for name, v in sorted(R["TN4"].items(), key=lambda t: -t[1]):
-    print(f"TN4  {name:<17} {v:.2%}")
+print(f"Dữ liệu: {len(y)} bông hoa, 2 đặc trưng | {len(y_tr)} mẫu huấn luyện, {len(y_te)} mẫu kiểm tra")
+print(f"K tốt nhất (kiểm định chéo 10-fold): K = {best_k} ({acc_cv[best_k - 1]:.2%})")
+print(f"Độ chính xác trên tập kiểm tra: {acc:.2%} ({R['dung']}/{len(y_te)} mẫu đúng)")
+print("Ma trận nhầm lẫn (hàng: thực tế, cột: dự đoán):")
+print(cm)
+for s in chi_tiet_sai:
+    print(f"Mẫu sai: cánh hoa {s['canh_hoa_cm']} cm, thực tế {s['that']}, dự đoán {s['du_doan']}, phiếu {s['phieu']}")
+print(f"KNN tự cài đặt trùng khớp scikit-learn: {R['trung_khop_sklearn']}/{len(y_te)} dự đoán")
 print("Đã lưu results.json và các hình trong", FIG)

@@ -13,7 +13,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.patches import Circle, FancyBboxPatch
-from sklearn.datasets import load_breast_cancer
+from sklearn.datasets import load_wine
 from sklearn.preprocessing import StandardScaler
 
 BASE = os.path.dirname(os.path.abspath(__file__))
@@ -98,30 +98,29 @@ fig, ax = plt.subplots(figsize=(6, 5))
 base_axes(ax, "Dữ liệu đầu vào: tập huấn luyện và điểm truy vấn Q")
 draw_points(ax); draw_q(ax); legend(ax); save("h1_dau_vao.png")
 
-# ----------------------------------------------------------------- H2. Bước 1: chuẩn hóa (dữ liệu thật)
-data = load_breast_cancer()
+# ----------------------------------------------------------------- H2. Bước 1: chuẩn hóa (dữ liệu thật Wine)
+data = load_wine()
 names = list(data.feature_names)
-ia, ism = names.index("mean area"), names.index("mean smoothness")
-rng = np.random.default_rng(1)
-idx = rng.choice(len(data.target), 120, replace=False)
-Xs = data.data[idx][:, [ia, ism]]; ys = data.target[idx]
+ip, ia = names.index("proline"), names.index("alcohol")
+Xs = data.data[:, [ip, ia]]; ys = data.target
+cols = [("#2ca02c", "o", "Giống 1"), (BLUE, "s", "Giống 2"), (RED, "^", "Giống 3")]
 fig, axes = plt.subplots(1, 2, figsize=(11, 4.4))
 ax = axes[0]
-for c, col, m in [(0, RED, "o"), (1, BLUE, "s")]:
+for c, (col, m, lb) in enumerate(cols):
     ax.scatter(Xs[ys == c, 0], Xs[ys == c, 1], s=22, color=col, marker=m, edgecolor="k", linewidth=.3)
-ax.set_xlim(0, 2600); ax.set_ylim(-1300, 1300)          # hai trục cùng tỉ lệ 1:1
+ax.set_xlim(0, 1800); ax.set_ylim(-900, 900)            # hai trục cùng tỉ lệ 1:1
 ax.set_aspect("equal")
-ax.set_xlabel("Diện tích khối u (143 – 2501)"); ax.set_ylabel("Độ trơn (0,05 – 0,16)")
-ax.set_title("TRƯỚC chuẩn hóa (hai trục cùng tỉ lệ):\nđặc trưng độ trơn gần như bị triệt tiêu", fontsize=11)
+ax.set_xlabel("Proline (278 – 1680)"); ax.set_ylabel("Nồng độ cồn (11 – 14,8)")
+ax.set_title("TRƯỚC chuẩn hóa (hai trục cùng tỉ lệ):\nđặc trưng nồng độ cồn gần như bị triệt tiêu", fontsize=11)
 ax.grid(alpha=.3)
 Z = StandardScaler().fit_transform(Xs)
 ax = axes[1]
-for c, col, m, lb in [(0, RED, "o", "Ác tính"), (1, BLUE, "s", "Lành tính")]:
+for c, (col, m, lb) in enumerate(cols):
     ax.scatter(Z[ys == c, 0], Z[ys == c, 1], s=22, color=col, marker=m, edgecolor="k", linewidth=.3, label=lb)
-ax.set_aspect("equal"); ax.set_xlim(-3, 5); ax.set_ylim(-3.2, 3.2)
-ax.set_xlabel("Diện tích (đã chuẩn hóa)"); ax.set_ylabel("Độ trơn (đã chuẩn hóa)")
+ax.set_aspect("equal"); ax.set_xlim(-2.5, 3.5); ax.set_ylim(-3, 3)
+ax.set_xlabel("Proline (đã chuẩn hóa)"); ax.set_ylabel("Nồng độ cồn (đã chuẩn hóa)")
 ax.set_title("SAU chuẩn hóa Z-score:\nhai đặc trưng có cùng thang đo", fontsize=11)
-ax.grid(alpha=.3); ax.legend(fontsize=9, loc="upper right")
+ax.grid(alpha=.3); ax.legend(fontsize=9, loc="lower right")
 save("h2_chuan_hoa.png")
 
 # ----------------------------------------------------------------- H3. Bước 2: đo khoảng cách
