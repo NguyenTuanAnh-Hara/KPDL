@@ -14,17 +14,20 @@ Tìm hiểu thuật toán KNN và thực nghiệm chẩn đoán khối u vú là
 
 ## Chạy thực nghiệm
 
+Yêu cầu Python 3.8 trở lên. Dữ liệu có sẵn trong scikit-learn, không cần tải thêm.
+
 ```bash
-cd 2_MaNguon
-pip install numpy pandas matplotlib scikit-learn
-python knn_experiment.py   # 8 thí nghiệm -> results.json + figures/
-python figs_theory.py      # hình minh họa lý thuyết
+pip install -r requirements.txt
+python 2_MaNguon/knn_experiment.py   # 8 thí nghiệm -> 2_MaNguon/results.json + figures/ (~30 giây)
+python 2_MaNguon/figs_theory.py      # hình minh họa lý thuyết (chạy sau lệnh trên)
 ```
+
+Kết quả độ chính xác trùng khớp báo cáo (cố định `random_state = 42`); riêng thời gian chạy ở thí nghiệm 8 phụ thuộc tốc độ máy.
 
 ## Biên dịch slide
 
-Overleaf: Upload Project (nén thư mục `3_Slide`) → Menu → Compiler: **XeLaTeX**.
-Máy cá nhân: `cd 3_Slide && latexmk -xelatex main.tex`.
+Overleaf: nén thư mục `3_Slide` thành zip → New Project → Upload Project → Menu → Compiler: **XeLaTeX**.
+Máy cá nhân (TeX Live hoặc MiKTeX): `cd 3_Slide && latexmk -xelatex main.tex`. Không dùng pdfLaTeX.
 
 ## Kết quả chính
 

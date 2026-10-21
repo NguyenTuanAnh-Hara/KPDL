@@ -3,12 +3,14 @@
 Bài tập lớn Khai phá dữ liệu - Đề tài: Thuật toán K-Nearest Neighbors (KNN)
 Thực nghiệm trên bộ dữ liệu Breast Cancer Wisconsin (Diagnostic).
 
-Chạy:  python knn_experiment.py
-Yêu cầu: numpy, pandas, matplotlib, scikit-learn
-Kết quả: các hình .png trong thư mục figures/ và file results.json
+Chạy (từ thư mục bất kỳ):  python knn_experiment.py
+Cài thư viện:              pip install -r requirements.txt
+Kết quả: các hình .png trong thư mục figures/ và file results.json (cạnh file này).
+Dữ liệu được nạp sẵn từ scikit-learn, không cần tải thêm hay kết nối mạng.
 """
 import json
 import os
+import sys
 import time
 from collections import Counter
 
@@ -32,8 +34,16 @@ from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
 SEED = 42
-FIG = "figures"
+# Đường dẫn tính theo vị trí file script -> chạy được từ thư mục bất kỳ, trên mọi hệ điều hành
+BASE = os.path.dirname(os.path.abspath(__file__))
+FIG = os.path.join(BASE, "figures")
+RESULTS = os.path.join(BASE, "results.json")
 os.makedirs(FIG, exist_ok=True)
+# Tránh lỗi in tiếng Việt trên console Windows (cp1252/cp437)
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except AttributeError:
+    pass
 plt.rcParams.update({"font.size": 11, "figure.dpi": 100})
 RES = {}
 
@@ -89,6 +99,7 @@ cv = StratifiedKFold(n_splits=10, shuffle=True, random_state=SEED)
 # ---------------------------------------------------------------------------
 t = time.perf_counter(); p_scr = KNNScratch(k=5).fit(X_tr_s, y_tr).predict(X_te_s); t_scr = time.perf_counter() - t
 t = time.perf_counter(); p_skl = KNeighborsClassifier(n_neighbors=5).fit(X_tr_s, y_tr).predict(X_te_s); t_skl = time.perf_counter() - t
+SV_SAME = int((p_scr == p_skl).sum())
 RES["scratch_vs_sklearn"] = {
     "acc_scratch": accuracy_score(y_te, p_scr), "acc_sklearn": accuracy_score(y_te, p_skl),
     "same_predictions": int((p_scr == p_skl).sum()), "n_test": int(len(y_te)),
@@ -121,7 +132,7 @@ plt.text(best_k + 0.4, 0.997, f"K được chọn (CV, K lẻ) = {best_k}", colo
 plt.xlabel("Số láng giềng K"); plt.ylabel("Accuracy")
 plt.title("Ảnh hưởng của K đến độ chính xác (dữ liệu đã chuẩn hóa)")
 plt.xticks(range(1, 31, 2)); plt.grid(alpha=.3); plt.legend(loc="lower right")
-plt.tight_layout(); plt.savefig(f"{FIG}/fig_k_sweep.png", dpi=200); plt.close()
+plt.tight_layout(); plt.savefig(os.path.join(FIG, "fig_k_sweep.png"), dpi=200); plt.close()
 
 # ---------------------------------------------------------------------------
 # 4. Thí nghiệm 3: có và không chuẩn hóa dữ liệu
@@ -139,7 +150,7 @@ plt.plot(Ks, cv_acc, "s-", ms=4, label="Chuẩn hóa Z-score (StandardScaler)", 
 plt.xlabel("Số láng giềng K"); plt.ylabel("10-fold CV accuracy")
 plt.title("Ảnh hưởng của chuẩn hóa dữ liệu đến KNN")
 plt.xticks(range(1, 31, 2)); plt.grid(alpha=.3); plt.legend(loc="center right")
-plt.tight_layout(); plt.savefig(f"{FIG}/fig_scaling.png", dpi=200); plt.close()
+plt.tight_layout(); plt.savefig(os.path.join(FIG, "fig_scaling.png"), dpi=200); plt.close()
 
 # ---------------------------------------------------------------------------
 # 5. Thí nghiệm 4: độ đo khoảng cách x cách bỏ phiếu
@@ -181,7 +192,7 @@ for i in range(2):
 ax.set_xticks([0, 1]); ax.set_xticklabels(lab); ax.set_yticks([0, 1]); ax.set_yticklabels(lab)
 ax.set_xlabel("Nhãn dự đoán"); ax.set_ylabel("Nhãn thực tế")
 ax.set_title(f"Ma trận nhầm lẫn (KNN, K = {best_k})")
-plt.tight_layout(); plt.savefig(f"{FIG}/fig_confusion.png", dpi=200); plt.close()
+plt.tight_layout(); plt.savefig(os.path.join(FIG, "fig_confusion.png"), dpi=200); plt.close()
 
 # ---------------------------------------------------------------------------
 # 7. Thí nghiệm 6: so sánh với các thuật toán phân lớp khác
@@ -252,13 +263,28 @@ for ax, k in zip(axes, [1, 15, 50]):
     ax.set_xlabel("PC1")
 axes[0].set_ylabel("PC2")
 fig.suptitle("Ranh giới quyết định của KNN trên 2 thành phần chính (đỏ: ác tính, xanh: lành tính)")
-plt.tight_layout(); plt.savefig(f"{FIG}/fig_boundary.png", dpi=200); plt.close()
+plt.tight_layout(); plt.savefig(os.path.join(FIG, "fig_boundary.png"), dpi=200); plt.close()
 RES["pca_boundary"] = pca_res
 
-with open("results.json", "w", encoding="utf-8") as f:
+with open(RESULTS, "w", encoding="utf-8") as f:
     json.dump(RES, f, ensure_ascii=False, indent=2, default=float)
-print(json.dumps({k: v for k, v in RES.items() if k not in ("k_sweep", "scaling")}, ensure_ascii=False, indent=1, default=float))
-print("best_k", best_k, "best_cv", max(cv_acc), "best_raw", max(cv_raw), RES["scaling"]["best_raw_k"])
-print("test at K:", {k: round(a, 4) for k, a in zip(Ks, te_acc)})
-print("cv at K:", {k: round(a, 4) for k, a in zip(Ks, cv_acc)})
-print("raw cv:", {k: round(a, 4) for k, a in zip(Ks, cv_raw)})
+
+# ---------------------------------------------------------------------------
+# Tóm tắt kết quả ra màn hình
+# ---------------------------------------------------------------------------
+print("=" * 64)
+print(f"Dữ liệu: {RES['data']['n_samples']} mẫu, {RES['data']['n_features']} đặc trưng | "
+      f"train {RES['split']['train']} / test {RES['split']['test']}")
+print(f"TN1  Tự cài đặt vs scikit-learn: trùng {SV_SAME}/{len(y_te)} dự đoán")
+print(f"TN2  K tốt nhất (CV, K lẻ) = {best_k}, CV acc = {cv_acc[best_k - 1]:.4f}")
+print(f"TN3  Không chuẩn hóa: CV tốt nhất {max(cv_raw):.4f} | có chuẩn hóa: {cv_acc[best_k - 1]:.4f}")
+for g in grid:
+    print(f"TN4  {g['metric']:<10} {g['weights']:<9} CV {g['cv']:.4f}  test {g['test']:.4f}")
+print(f"TN5  Test accuracy {RES['final']['accuracy']:.4f} | Recall ác tính {RES['final']['recall_malignant']:.4f} "
+      f"| ma trận nhầm lẫn {RES['final']['cm']}")
+for r in cmp_rows:
+    print(f"TN7  {r['model']:<20} CV {r['cv_mean']:.4f}  test {r['test_acc']:.4f}")
+for t in tim:
+    print(f"TN8  n={t['n']:>6}: tự cài {t['scratch']:8.1f} ms | KD-Tree {t['kd_tree']:7.1f} ms | brute {t['brute']:6.1f} ms")
+print(f"Đã lưu: {RESULTS}")
+print(f"Hình:   {FIG}")

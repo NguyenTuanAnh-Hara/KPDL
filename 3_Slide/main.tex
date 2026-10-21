@@ -1,12 +1,15 @@
 % =====================================================================
 %  Slide bài tập lớn Khai phá dữ liệu – Thuật toán K-Nearest Neighbors
 %  Biên dịch bằng XeLaTeX (Overleaf: Menu -> Compiler -> XeLaTeX)
+%  Không dùng pdfLaTeX: gói fontspec cần XeLaTeX
 % =====================================================================
 \documentclass[aspectratio=169,9pt]{beamer}
 
 \usepackage{fontspec}
-\setsansfont{TeX Gyre Heros}
-\setmonofont{DejaVu Sans Mono}[Scale=0.85]
+% Font theo tên file: có sẵn trong TeX Live, MiKTeX và Overleaf (không phụ thuộc font cài trên máy)
+\setsansfont{texgyreheros}[Extension=.otf, UprightFont=*-regular, BoldFont=*-bold,
+  ItalicFont=*-italic, BoldItalicFont=*-bolditalic]
+% Font code: Latin Modern Mono (mặc định của fontspec, có đủ dấu tiếng Việt)
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs,array,tabularx}
 \usepackage{graphicx}

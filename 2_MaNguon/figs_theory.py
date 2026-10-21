@@ -1,13 +1,22 @@
 # -*- coding: utf-8 -*-
 """Hình minh họa phần lý thuyết + hình tổng hợp kết quả thực nghiệm."""
 import json
+import os
+import sys
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle, FancyBboxPatch
 import numpy as np
 
-FIG = "figures"
+BASE = os.path.dirname(os.path.abspath(__file__))
+FIG = os.path.join(BASE, "figures")
+RESULTS = os.path.join(BASE, "results.json")
+os.makedirs(FIG, exist_ok=True)
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except AttributeError:
+    pass
 RED, BLUE, GREY = "#d62728", "#1f77b4", "#7f7f7f"
 plt.rcParams.update({"font.size": 11})
 
@@ -31,7 +40,7 @@ ax.scatter([], [], color=RED, marker="o", edgecolor="k", label="Lớp Đỏ")
 ax.scatter([], [], color=BLUE, marker="s", edgecolor="k", label="Lớp Xanh")
 ax.set_xlim(-0.5, 7.5); ax.set_ylim(-0.5, 6.5); ax.set_aspect("equal"); ax.grid(alpha=.3)
 ax.legend(loc="lower right"); ax.set_title("Ví dụ: K = 1 → Xanh;  K = 3 → Đỏ;  K = 5 → Đỏ")
-plt.tight_layout(); plt.savefig(f"{FIG}/fig_example.png", dpi=200); plt.close()
+plt.tight_layout(); plt.savefig(os.path.join(FIG, "fig_example.png"), dpi=200); plt.close()
 
 # 2. Hình ý tưởng KNN: hai cụm điểm, một điểm mới, vòng K = 3 và K = 7
 rng = np.random.default_rng(3)
@@ -53,8 +62,7 @@ for i in order[:7]:
 ax.scatter(*q, s=280, marker="*", color="gold", edgecolor="k", zorder=4, label="Điểm cần dự đoán")
 ax.set_aspect("equal"); ax.grid(alpha=.3); ax.legend(loc="lower right", framealpha=.95)
 ax.set_title("Ý tưởng KNN: láng giềng gần nhất bỏ phiếu")
-plt.tight_layout(); plt.savefig(f"{FIG}/fig_idea.png", dpi=200); plt.close()
-print("idea votes", [(k, int((lab[order[:k]] == 0).sum())) for k in (3, 7)])
+plt.tight_layout(); plt.savefig(os.path.join(FIG, "fig_idea.png"), dpi=200); plt.close()
 
 # 3. Sơ đồ khối các bước của thuật toán
 steps = ["Dữ liệu huấn luyện D = {(xᵢ, yᵢ)}\nvà điểm cần dự đoán x",
@@ -75,10 +83,13 @@ for i, s in enumerate(steps):
         ax.annotate("", xy=(0.5, y - H - gap + 0.006), xytext=(0.5, y - H - 0.004),
                     arrowprops=dict(arrowstyle="-|>", color="#333", lw=1.2))
 ax.set_xlim(0, 1); ax.set_ylim(0, 1)
-plt.tight_layout(); plt.savefig(f"{FIG}/fig_flow.png", dpi=200); plt.close()
+plt.tight_layout(); plt.savefig(os.path.join(FIG, "fig_flow.png"), dpi=200); plt.close()
 
 # 4. Hình kết quả: so sánh thuật toán + thời gian dự đoán
-R = json.load(open("results.json", encoding="utf-8"))
+if not os.path.exists(RESULTS):
+    sys.exit("Chưa có results.json - hãy chạy 'python knn_experiment.py' trước.")
+with open(RESULTS, encoding="utf-8") as f:
+    R = json.load(f)
 cmp = sorted(R["compare"], key=lambda r: r["test_acc"])
 fig, ax = plt.subplots(figsize=(8, 4.6))
 names = [r["model"] for r in cmp]; y = np.arange(len(cmp))
@@ -91,7 +102,7 @@ for i, r in enumerate(cmp):
 ax.set_yticks(y); ax.set_yticklabels(names); ax.set_xlim(0.85, 1.01)
 ax.set_xlabel("Accuracy"); ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.18), ncol=2, fontsize=9); ax.grid(axis="x", alpha=.3)
 ax.set_title("So sánh KNN với các thuật toán phân lớp khác")
-plt.tight_layout(); plt.savefig(f"{FIG}/fig_compare.png", dpi=200); plt.close()
+plt.tight_layout(); plt.savefig(os.path.join(FIG, "fig_compare.png"), dpi=200); plt.close()
 
 tm = R["timing"]
 fig, ax = plt.subplots(figsize=(7.5, 4))
@@ -101,5 +112,5 @@ ax.plot(n, [t["kd_tree"] for t in tm], "s-", color="#ff7f0e", label="scikit-lear
 ax.plot(n, [t["brute"] for t in tm], "^-", color=BLUE, label="scikit-learn, brute force (vector hóa)")
 ax.set_xlabel("Số mẫu huấn luyện n (d = 30 chiều)"); ax.set_ylabel("Thời gian dự đoán 200 điểm (ms)")
 ax.set_title("Thời gian dự đoán tăng tuyến tính theo n"); ax.grid(alpha=.3); ax.legend(fontsize=9)
-plt.tight_layout(); plt.savefig(f"{FIG}/fig_timing.png", dpi=200); plt.close()
-print("ok")
+plt.tight_layout(); plt.savefig(os.path.join(FIG, "fig_timing.png"), dpi=200); plt.close()
+print("Đã vẽ 5 hình minh họa vào", FIG)
