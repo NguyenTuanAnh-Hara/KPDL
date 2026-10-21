@@ -5,18 +5,16 @@ Yeu cau: Python 3.8 tro len.
 1) Cai thu vien (chi can 1 lan):
      pip install -r requirements.txt
 
-2) Chay thuc nghiem (8 thi nghiem, khoang 30 giay):
+2) Chay 4 thi nghiem (khoang 10 giay):
      python knn_experiment.py
-   -> ghi results.json va 4 hinh vao thu muc figures/
+   -> results.json + 4 hinh tn1..tn4 trong figures/
+      TN1 chon K | TN2 chuan hoa | TN3 ket qua cuoi | TN4 so sanh thuat toan
 
-3) Ve hinh minh hoa (chay SAU buoc 2):
-     python figs_theory.py
-   -> ghi 5 hinh con lai vao figures/
+3) Ve hinh minh hoa cac buoc thuat toan:
+     python hinh_minh_hoa.py
+   -> 9 hinh h0..h8 trong figures/
 
 Ghi chu:
-- Co the chay tu thu muc bat ky (vd: python 2_MaNguon/knn_experiment.py tu thu muc goc):
-  file ket qua luon duoc ghi canh file script.
-- Du lieu Breast Cancer Wisconsin co san trong scikit-learn, khong can tai hay can mang.
-- Ket qua do chinh xac giong het bao cao (da co dinh random_state = 42).
-  Rieng thoi gian chay o thi nghiem 8 se khac nhau tuy toc do may.
-- Google Colab: tai 2 file .py len, chay "!python knn_experiment.py" roi "!python figs_theory.py".
+- Chay duoc tu thu muc bat ky; ket qua luon ghi canh file script.
+- Du lieu Breast Cancer Wisconsin co san trong scikit-learn, khong can tai.
+- Ket qua giong het bao cao (co dinh random_state = 42).

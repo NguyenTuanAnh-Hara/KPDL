@@ -18,11 +18,11 @@ Yêu cầu Python 3.8 trở lên. Dữ liệu có sẵn trong scikit-learn, khô
 
 ```bash
 pip install -r requirements.txt
-python 2_MaNguon/knn_experiment.py   # 8 thí nghiệm -> 2_MaNguon/results.json + figures/ (~30 giây)
-python 2_MaNguon/figs_theory.py      # hình minh họa lý thuyết (chạy sau lệnh trên)
+python 2_MaNguon/knn_experiment.py   # 4 thí nghiệm -> 2_MaNguon/results.json + figures/ (~10 giây)
+python 2_MaNguon/hinh_minh_hoa.py    # hình minh họa từng bước của thuật toán
 ```
 
-Kết quả độ chính xác trùng khớp báo cáo (cố định `random_state = 42`); riêng thời gian chạy ở thí nghiệm 8 phụ thuộc tốc độ máy.
+Kết quả trùng khớp báo cáo (cố định `random_state = 42`).
 
 ## Biên dịch slide
 
@@ -31,9 +31,9 @@ Máy cá nhân (TeX Live hoặc MiKTeX): `cd 3_Slide && latexmk -xelatex main.te
 
 ## Kết quả chính
 
-| Nội dung | Kết quả |
+| Thí nghiệm | Kết quả |
 | --- | --- |
-| K tốt nhất (10-fold CV, K lẻ) | K = 11, CV accuracy 96,93% |
-| Mô hình cuối (Z-score + KNN, Euclid) | Test accuracy 97,37%, Precision ác tính 100%, Recall ác tính 92,86% |
-| Ảnh hưởng chuẩn hóa | Test accuracy 93,86% → 97,37% |
-| So sánh 5 thuật toán | KNN xếp thứ 3, sau Logistic Regression và SVM (98,25%) |
+| 1. Chọn K (kiểm định chéo 10-fold, K lẻ) | K = 11, độ chính xác 96,93% |
+| 2. Chuẩn hóa dữ liệu | 93,86% → 97,37% |
+| 3. Mô hình cuối | Đúng 111/114 ca, bỏ sót 3 ca ác tính, không báo nhầm ca nào |
+| 4. So sánh 5 thuật toán | KNN xếp thứ 3, sau Hồi quy Logistic và SVM (98,25%) |
