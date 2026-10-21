@@ -1,0 +1,622 @@
+% =====================================================================
+%  Slide bài tập lớn Khai phá dữ liệu – Thuật toán K-Nearest Neighbors
+%  Biên dịch bằng XeLaTeX (Overleaf: Menu -> Compiler -> XeLaTeX)
+% =====================================================================
+\documentclass[aspectratio=169,9pt]{beamer}
+
+\usepackage{fontspec}
+\setsansfont{TeX Gyre Heros}
+\setmonofont{DejaVu Sans Mono}[Scale=0.85]
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,array,tabularx}
+\usepackage{graphicx}
+\usepackage[most]{tcolorbox}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shadows}
+\graphicspath{{figures/}}
+
+% ---------------------------------------------------------------- Màu
+\definecolor{navy}{HTML}{1F3A8A}
+\definecolor{teal}{HTML}{0F8F82}
+\definecolor{orange}{HTML}{D97706}
+\definecolor{green}{HTML}{059669}
+\definecolor{red}{HTML}{B91C1C}
+\definecolor{bg}{HTML}{F4F5F8}
+\definecolor{txt}{HTML}{1F2937}
+\definecolor{muted}{HTML}{6B7280}
+
+\newcommand{\hl}[1]{\textcolor{navy}{\textbf{#1}}}     % nhấn mạnh xanh
+\newcommand{\ho}[1]{\textcolor{orange}{\textbf{#1}}}   % nhấn mạnh cam
+
+% ---------------------------------------------------------------- Giao diện
+\setbeamercolor{background canvas}{bg=bg}
+\setbeamercolor{normal text}{fg=txt}
+\setbeamerfont{normal text}{size=\small}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{itemize items}{\raisebox{0.15ex}{\color{navy}\rule{0.5em}{0.5em}}}
+\setbeamertemplate{itemize subitem}{\color{navy}--}
+\setbeamerfont{itemize/enumerate body}{size=\small}
+\setlength{\leftmargini}{1.2em}
+
+% Thanh tiêu đề màu xanh đậm chạy hết chiều ngang
+\setbeamertemplate{frametitle}{%
+  \nointerlineskip
+  \begin{beamercolorbox}[wd=\paperwidth,ht=2.3em,dp=0.9em,leftskip=1.1em]{frametitle}%
+    \usebeamerfont{frametitle}\insertframetitle
+  \end{beamercolorbox}}
+\setbeamercolor{frametitle}{bg=navy,fg=white}
+\setbeamerfont{frametitle}{size=\Large}
+
+% Số trang dạng "n / N" ở góc phải dưới
+\setbeamertemplate{footline}{%
+  \hfill{\fontsize{6}{7}\selectfont\color{muted}\insertframenumber\,/\,\inserttotalframenumber}\hspace*{1.2em}\vspace*{0.8em}}
+
+% ---------------------------------------------------------------- Hộp nội dung
+% \begin{cbox}[màu]{Tiêu đề} ... \end{cbox}
+\newtcolorbox{cbox}[2][navy]{enhanced, colback=white, colframe=#1, coltitle=white,
+  fonttitle=\bfseries\footnotesize, title={#2}, arc=1.6mm, boxrule=0.6pt,
+  left=2.2mm, right=2.2mm, top=1.6mm, bottom=1.6mm, toptitle=1.2mm, bottomtitle=1.2mm,
+  drop fuzzy shadow=black!35, before upper={\small\color{txt}}}
+\newtcolorbox{tbox}[1][navy]{enhanced, colback=white, colframe=#1, arc=1.6mm, boxrule=0.6pt,
+  left=2.2mm, right=2.2mm, top=1.4mm, bottom=1.4mm, drop fuzzy shadow=black!35,
+  before upper={\small\color{txt}}}
+
+% Ô số thứ tự nhỏ (dùng cho danh sách tài liệu)
+\newcommand{\nbox}[1]{\tikz[baseline=(n.base)]\node[fill=navy,text=white,font=\scriptsize\bfseries,
+  inner sep=2pt,minimum width=1.2em,minimum height=1.2em](n){#1};}
+
+% ---------------------------------------------------------------- Thông tin
+\newcommand{\hocphan}{Khai phá dữ liệu}
+\newcommand{\gvhd}{……………………………}   % TODO: tên giảng viên
+\newcommand{\nhom}{Nhóm ……}                  % TODO: số nhóm
+\newcommand{\thanhvien}{Thành viên 1 (MSSV) \quad$\cdot$\quad Thành viên 2 (MSSV)} % TODO
+
+\begin{document}
+
+% =====================================================================
+% 1. TRANG BÌA
+% =====================================================================
+{
+\setbeamertemplate{footline}{}
+\begin{frame}[plain]
+\vspace*{0.4em}
+\begin{tcolorbox}[enhanced, colback=navy, colframe=navy, arc=2mm, drop fuzzy shadow=black!45,
+  halign=center, top=4mm, bottom=4mm]
+  {\color{white}\bfseries\Large THUẬT TOÁN K-NEAREST NEIGHBORS (KNN)\par}
+  \vspace{1.2mm}
+  {\color{white}\normalsize Lý thuyết và thực nghiệm chẩn đoán ung thư vú trên bộ dữ liệu Breast Cancer Wisconsin\par}
+\end{tcolorbox}
+\vspace{1.0em}
+\begin{center}
+  {\bfseries\normalsize Học phần: \hocphan}\par\vspace{0.9em}
+  {\footnotesize Giảng viên hướng dẫn: \gvhd}\par\vspace{0.3em}
+  {\footnotesize Trường Công nghệ Thông tin Phenikaa -- Đại học Phenikaa}\par\vspace{1.0em}
+  {\bfseries\small \nhom}\par\vspace{0.4em}
+  {\footnotesize \thanhvien}\par\vspace{0.9em}
+  {\scriptsize\color{muted} Hà Nội, tháng 10 năm 2026}
+\end{center}
+\end{frame}
+}
+
+% =====================================================================
+% 2. NỘI DUNG
+% =====================================================================
+\begin{frame}{Nội dung trình bày}
+\vfill
+\begin{columns}[T,totalwidth=\textwidth]
+\begin{column}{0.47\textwidth}
+  \begin{cbox}[navy]{1. Giới thiệu \& công việc liên quan}
+    Bài toán phân lớp, ý tưởng KNN, ứng dụng và các bài báo liên quan
+  \end{cbox}
+  \begin{cbox}[teal]{2. Thuật toán KNN}
+    Các bước, ví dụ tính tay, chọn K, khoảng cách, chuẩn hóa, độ phức tạp
+  \end{cbox}
+\end{column}
+\begin{column}{0.47\textwidth}
+  \begin{cbox}[orange]{3. Thực nghiệm \& phân tích}
+    Dữ liệu ung thư vú, 8 thí nghiệm, so sánh với 4 thuật toán khác
+  \end{cbox}
+  \begin{cbox}[green]{4. Kết luận}
+    Điểm mạnh, điểm yếu, hạn chế và hướng phát triển
+  \end{cbox}
+\end{column}
+\end{columns}
+\vfill
+\end{frame}
+
+% =====================================================================
+% 3. GIỚI THIỆU
+% =====================================================================
+\begin{frame}{Bài toán phân lớp \& ý tưởng KNN}
+\begin{cbox}[navy]{Bối cảnh}
+  \textbf{Phân lớp}: dự đoán nhãn cho mẫu mới từ các mẫu đã biết nhãn (u \ho{lành tính}/\ho{ác tính}).
+  KNN dựa trên ý tưởng \hl{“những thứ giống nhau thì nằm gần nhau”}: tìm \textbf{K điểm gần nhất} rồi cho chúng \textbf{bỏ phiếu}.
+\end{cbox}
+\vspace{-0.1em}
+\begin{columns}[T,totalwidth=\textwidth]
+\begin{column}{0.31\textwidth}
+  \begin{cbox}[navy]{1. Học lười (lazy)}
+    Huấn luyện chỉ \textbf{lưu dữ liệu}, tính toán khi dự đoán
+  \end{cbox}
+\end{column}
+\begin{column}{0.31\textwidth}
+  \begin{cbox}[teal]{2. Phi tham số}
+    Không giả định phân phối dữ liệu $\Rightarrow$ học được ranh giới \textbf{phi tuyến}
+  \end{cbox}
+\end{column}
+\begin{column}{0.31\textwidth}
+  \begin{cbox}[green]{3. Dựa trên khoảng cách}
+    Chất lượng phụ thuộc vào \textbf{K}, \textbf{độ đo khoảng cách} và \textbf{chuẩn hóa}
+  \end{cbox}
+\end{column}
+\end{columns}
+\vspace{-0.1em}
+\begin{cbox}[orange]{Mục tiêu bài tập lớn}
+  Tự cài đặt KNN $\cdot$ thực nghiệm trên \hl{Breast Cancer Wisconsin} $\cdot$ phân tích K, chuẩn hóa, độ đo $\cdot$ so sánh 4 thuật toán
+\end{cbox}
+\end{frame}
+
+% =====================================================================
+% 4. CÔNG VIỆC LIÊN QUAN
+% =====================================================================
+\begin{frame}{Một số công việc liên quan}
+\begin{columns}[T,totalwidth=\textwidth]
+\begin{column}{0.62\textwidth}
+\begin{cbox}[navy]{Các bài báo tiêu biểu}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Năm} & \textbf{Tác giả} & \textbf{Đóng góp}\\
+\midrule
+1951 & Fix \& Hodges & Ý tưởng phân lớp phi tham số theo láng giềng\\
+1967 & Cover \& Hart & Sai số 1-NN $\le$ \ho{2 lần} sai số Bayes\\
+1968/72 & Hart; Wilson & Condensed NN, Edited NN: giảm/làm sạch mẫu\\
+1976 & Dudani & KNN có \textbf{trọng số} theo khoảng cách\\
+1977 & Friedman và cs. & \textbf{KD-Tree} tìm láng giềng nhanh\\
+1999 & Beyer và cs. & \textbf{Lời nguyền số chiều}\\
+1998/2018 & Indyk; Malkov & LSH, HNSW: láng giềng gần \textbf{xấp xỉ}\\
+2008 & Wu và cs. & KNN thuộc \hl{Top 10 thuật toán KPDL}\\
+\bottomrule
+\end{tabularx}
+\end{cbox}
+\end{column}
+\begin{column}{0.35\textwidth}
+\begin{cbox}[teal]{Ứng dụng}
+\begin{itemize}\setlength\itemsep{0.1em}
+  \item Chẩn đoán y tế
+  \item Hệ khuyến nghị (lọc cộng tác)
+  \item Nhận dạng chữ viết tay (MNIST)
+  \item Điền dữ liệu thiếu (KNN Imputer)
+  \item SMOTE cho dữ liệu mất cân bằng
+  \item Tìm kiếm vector, RAG
+\end{itemize}
+\end{cbox}
+\end{column}
+\end{columns}
+\end{frame}
+
+% =====================================================================
+% 5. THUẬT TOÁN
+% =====================================================================
+\begin{frame}{Thuật toán KNN: các bước}
+\begin{cbox}[navy]{Bốn bước dự đoán cho một điểm mới $x$}
+\centering
+\begin{tikzpicture}[
+  st/.style={draw=navy, fill=navy!6, rounded corners=2pt, align=center, font=\scriptsize,
+             minimum height=1.2cm, text width=2.2cm},
+  ar/.style={-{Stealth[length=2mm]}, thick, navy}]
+  \node[st, fill=black!5, draw=black!50] (d) {Tập huấn luyện\\$D=\{(x_i,y_i)\}$\\+ điểm mới $x$};
+  \node[st, right=0.3cm of d] (s1) {\textbf{B1.} Chọn K và\\hàm khoảng cách;\\chuẩn hóa dữ liệu};
+  \node[st, right=0.3cm of s1] (s2) {\textbf{B2.} Tính\\$d(x,x_i)$\\với mọi $i=1..n$};
+  \node[st, right=0.3cm of s2] (s3) {\textbf{B3.} Sắp xếp,\\lấy K điểm gần nhất\\$N_K(x)$};
+  \node[st, right=0.3cm of s3] (s4) {\textbf{B4.} Bỏ phiếu đa số\\(hồi quy: lấy\\trung bình)};
+  \foreach \a/\b in {d/s1,s1/s2,s2/s3,s3/s4} \draw[ar] (\a) -- (\b);
+\end{tikzpicture}
+\end{cbox}
+\vspace{0.2em}
+\begin{columns}[T,totalwidth=\textwidth]
+\begin{column}{0.48\textwidth}
+\begin{cbox}[teal]{Công thức dự đoán}
+  Phân lớp: \quad $\displaystyle \hat y=\arg\max_{c}\sum_{x_i\in N_K(x)} \mathbb{I}(y_i=c)$\\[0.3em]
+  Hồi quy: \quad $\displaystyle \hat y=\frac1K\sum_{x_i\in N_K(x)} y_i$\\[0.3em]
+  Có trọng số: \ $w_i = 1/d(x,x_i)$ \ (Dudani, 1976)
+\end{cbox}
+\end{column}
+\begin{column}{0.48\textwidth}
+\begin{cbox}[orange]{Độ đo khoảng cách thường dùng}
+\footnotesize
+\renewcommand{\arraystretch}{1.9}
+\begin{tabular}{@{}ll@{}}
+Euclid & $\sqrt{\textstyle\sum_j (x_j-z_j)^2}$\\
+Manhattan & $\textstyle\sum_j |x_j-z_j|$\\
+Chebyshev & $\max_j |x_j-z_j|$\\
+Cosine & $1-(x\cdot z)\,/\,(\|x\|\,\|z\|)$
+\end{tabular}
+\end{cbox}
+\end{column}
+\end{columns}
+\end{frame}
+
+% =====================================================================
+% 6. VÍ DỤ TÍNH TAY
+% =====================================================================
+\begin{frame}{Ví dụ tính tay: phân lớp điểm $Q(3,3)$}
+\begin{columns}[T,totalwidth=\textwidth]
+\begin{column}{0.42\textwidth}
+\begin{tbox}[navy]
+  \centering\includegraphics[width=\linewidth,height=0.62\textheight,keepaspectratio]{fig_example.png}
+\end{tbox}
+\end{column}
+\begin{column}{0.55\textwidth}
+\begin{cbox}[navy]{B1. Khoảng cách Euclid, sắp xếp tăng dần}
+\footnotesize\centering
+\begin{tabular}{@{}lllr@{}}
+\toprule
+\textbf{Điểm} & \textbf{Tọa độ} & \textbf{Lớp} & \textbf{$d(Q,\cdot)$}\\
+\midrule
+D & (4; 3) & \textcolor{navy}{Xanh} & 1,00\\
+C & (3; 1,5) & \textcolor{red}{Đỏ} & 1,50\\
+B & (2; 1) & \textcolor{red}{Đỏ} & 2,24\\
+A, E & (1; 1), (5; 5) & Đỏ, Xanh & 2,83\\
+F & (6; 4) & \textcolor{navy}{Xanh} & 3,16\\
+\bottomrule
+\end{tabular}
+\end{cbox}
+\begin{cbox}[orange]{B2. Bỏ phiếu: kết quả phụ thuộc vào K}
+\begin{itemize}\setlength\itemsep{0em}
+  \item K = 1 $\Rightarrow$ \hl{Xanh} \quad K = 3 (2 Đỏ, 1 Xanh) $\Rightarrow$ \ho{Đỏ} \quad K = 5 $\Rightarrow$ \ho{Đỏ}
+  \item Trọng số $1/d$, K = 3: Đỏ 1,12 $>$ Xanh 1,00 $\Rightarrow$ \ho{Đỏ}
+\end{itemize}
+\end{cbox}
+\end{column}
+\end{columns}
+\end{frame}
+
+% =====================================================================
+% 7. CÁC YẾU TỐ ẢNH HƯỞNG
+% =====================================================================
+\begin{frame}{Các yếu tố quyết định chất lượng KNN}
+\begin{columns}[T,totalwidth=\textwidth]
+\begin{column}{0.48\textwidth}
+\begin{cbox}[navy]{Chọn K: đánh đổi bias -- variance}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l X X@{}}
+\toprule
+ & \textbf{K nhỏ} & \textbf{K lớn}\\
+\midrule
+Ranh giới & gồ ghề & mượt\\
+Hiện tượng & \ho{overfitting} & \ho{underfitting}\\
+Cực đoan & K=1: train 100\% & K=n: luôn đoán lớp đông\\
+\bottomrule
+\end{tabularx}
+\vspace{0.2em}
+Chọn K bằng \hl{kiểm định chéo}; bài toán 2 lớp nên chọn \textbf{K lẻ}
+\end{cbox}
+\end{column}
+\begin{column}{0.48\textwidth}
+\begin{cbox}[teal]{Chuẩn hóa dữ liệu là bắt buộc}
+  \textit{mean area}: 143 -- 2501 \ vs \ \textit{mean smoothness}: 0,05 -- 0,16 \\
+  $\Rightarrow$ không chuẩn hóa thì khoảng cách gần như chỉ do diện tích quyết định.\\[0.2em]
+  Z-score: $x' = (x-\mu)/\sigma$, \ \textbf{fit trên tập train}
+\end{cbox}
+\end{column}
+\end{columns}
+\vspace{0.2em}
+\begin{columns}[T,totalwidth=\textwidth]
+\begin{column}{0.48\textwidth}
+\begin{cbox}[orange]{Độ phức tạp}
+  Huấn luyện $O(1)$ \ $\cdot$ \ Dự đoán $O(n\cdot d)$ mỗi điểm\\
+  Tăng tốc: KD-Tree, Ball Tree, LSH, HNSW
+\end{cbox}
+\end{column}
+\begin{column}{0.48\textwidth}
+\begin{cbox}[green]{Cơ sở lý thuyết \& giới hạn}
+  Cover--Hart: $R^* \le R_{1NN} \le 2R^*$\\
+  Lời nguyền số chiều: $d$ lớn $\Rightarrow$ “gần” mất ý nghĩa
+\end{cbox}
+\end{column}
+\end{columns}
+\end{frame}
+
+% =====================================================================
+% 8. THỰC NGHIỆM: DỮ LIỆU & QUY TRÌNH
+% =====================================================================
+\begin{frame}{Thực nghiệm: dữ liệu \& quy trình}
+\begin{columns}[T,totalwidth=\textwidth]
+\begin{column}{0.44\textwidth}
+\begin{cbox}[navy]{Breast Cancer Wisconsin (Diagnostic)}
+  \hl{569} mẫu $\cdot$ \hl{30} đặc trưng số (10 đặc điểm nhân tế bào $\times$ mean/SE/max)\\[0.2em]
+  \hl{212} ác tính (37,3\%) $\cdot$ \hl{357} lành tính (62,7\%) $\cdot$ không thiếu dữ liệu\\[0.2em]
+  Chia \textbf{80/20} phân tầng: 455 train, 114 test
+\end{cbox}
+\begin{cbox}[teal]{Môi trường}
+  Python 3 $\cdot$ NumPy $\cdot$ pandas $\cdot$ scikit-learn $\cdot$ matplotlib
+\end{cbox}
+\end{column}
+\begin{column}{0.53\textwidth}
+\begin{cbox}[orange]{8 thí nghiệm (chọn tham số bằng 10-fold CV trên tập train)}
+\footnotesize
+\begin{tabular}{@{}ll@{}}
+TN1 & KNN tự cài đặt so với scikit-learn\\
+TN2 & Ảnh hưởng của K (1 -- 30)\\
+TN3 & Có / không chuẩn hóa Z-score\\
+TN4 & 4 độ đo $\times$ bỏ phiếu đều / trọng số\\
+TN5 & Mô hình cuối: ma trận nhầm lẫn, P, R, F1\\
+TN6 & Ranh giới quyết định (PCA 2 chiều)\\
+TN7 & So sánh NB, Cây QĐ, LogReg, SVM\\
+TN8 & Thời gian dự đoán theo $n$\\
+\end{tabular}\\[0.3em]
+Lớp \ho{ác tính} là lớp dương tính $\Rightarrow$ quan tâm \textbf{Recall}
+\end{cbox}
+\end{column}
+\end{columns}
+\end{frame}
+
+% =====================================================================
+% 9. CÀI ĐẶT
+% =====================================================================
+\begin{frame}[fragile]{Cài đặt KNN từ đầu (TN1)}
+\begin{columns}[T,totalwidth=\textwidth]
+\begin{column}{0.58\textwidth}
+\begin{cbox}[navy]{\texttt{KNNScratch} -- đúng 4 bước của thuật toán}
+\footnotesize
+\begin{verbatim}
+class KNNScratch:
+    def __init__(self, k=5):
+        self.k = k
+    def fit(self, X, y):        # chỉ lưu dữ liệu
+        self.X, self.y = np.asarray(X), np.asarray(y)
+        return self
+    def _predict_one(self, x):
+        d = np.sqrt(((self.X - x) ** 2).sum(axis=1))
+        idx = np.argsort(d)[: self.k]
+        return Counter(self.y[idx]).most_common(1)[0][0]
+\end{verbatim}
+\end{cbox}
+\end{column}
+\begin{column}{0.39\textwidth}
+\begin{cbox}[green]{Kết quả kiểm chứng (K = 5)}
+  Trùng khớp \hl{114/114} dự đoán với \texttt{KNeighborsClassifier} của scikit-learn\\[0.2em]
+  Cùng accuracy \hl{95,61\%} trên tập test
+\end{cbox}
+\begin{cbox}[orange]{Pipeline chuẩn}
+  \texttt{StandardScaler} $\rightarrow$ \texttt{KNN}\\
+  đặt trong \texttt{cross\_val\_score} để chuẩn hóa được fit lại trên từng fold, \textbf{tránh rò rỉ dữ liệu}
+\end{cbox}
+\end{column}
+\end{columns}
+\end{frame}
+
+% =====================================================================
+% 10. CHỌN K & CHUẨN HÓA
+% =====================================================================
+\begin{frame}{Kết quả: chọn K và vai trò của chuẩn hóa (TN2, TN3)}
+\begin{columns}[T,totalwidth=\textwidth]
+\begin{column}{0.49\textwidth}
+\begin{cbox}[navy]{Accuracy theo K}
+  \centering\includegraphics[width=\linewidth]{fig_k_sweep.png}
+  \raggedright
+  K=1: train \ho{100\%}, test 93,86\% (overfit) $\cdot$ Chọn \hl{K = 11}: CV 96,93\%, test \hl{97,37\%}
+\end{cbox}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{cbox}[teal]{Có và không chuẩn hóa}
+  \centering\includegraphics[width=\linewidth]{fig_scaling.png}
+  \raggedright
+  Chuẩn hóa tốt hơn \textbf{ở mọi K}; test (K=11): 93,86\% $\rightarrow$ \hl{97,37\%} (7 $\rightarrow$ 3 mẫu sai)
+\end{cbox}
+\end{column}
+\end{columns}
+\end{frame}
+
+% =====================================================================
+% 11. ĐỘ ĐO & MÔ HÌNH CUỐI
+% =====================================================================
+\begin{frame}{Kết quả: độ đo khoảng cách \& mô hình cuối (TN4, TN5)}
+\begin{columns}[T,totalwidth=\textwidth]
+\begin{column}{0.46\textwidth}
+\begin{cbox}[navy]{Độ đo $\times$ cách bỏ phiếu (K = 11)}
+\footnotesize\centering
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+& \multicolumn{2}{c}{\textbf{Bỏ phiếu đều}} & \multicolumn{2}{c}{\textbf{Trọng số 1/d}}\\
+\textbf{Độ đo} & CV & Test & CV & Test\\
+\midrule
+Euclid & \textbf{96,93} & \textbf{97,37} & 96,93 & 97,37\\
+Manhattan & 96,71 & 97,37 & 96,71 & 97,37\\
+Chebyshev & \ho{93,61} & 92,98 & 93,61 & 92,98\\
+Cosine & 96,71 & 93,86 & 96,71 & 92,98\\
+\bottomrule
+\end{tabular}\\[0.3em]
+\raggedright
+Chebyshev chỉ dùng 1 chiều; Cosine bỏ qua \textbf{độ lớn} khối u. Trọng số gần như không đổi kết quả.
+\end{cbox}
+\end{column}
+\begin{column}{0.51\textwidth}
+\begin{cbox}[teal]{Mô hình cuối: Z-score + KNN (K = 11, Euclid)}
+\begin{columns}[T,totalwidth=\textwidth]
+\begin{column}{0.47\linewidth}
+  \includegraphics[width=\linewidth]{fig_confusion.png}
+\end{column}
+\begin{column}{0.5\linewidth}
+\footnotesize
+Accuracy \hl{97,37\%} (111/114)\\[0.3em]
+Ác tính: Precision \hl{100\%}, Recall \ho{92,86\%}, F1 96,30\%\\[0.3em]
+\textbf{0} dương tính giả, \ho{3} âm tính giả
+\end{column}
+\end{columns}
+\vspace{0.2em}
+\footnotesize Bỏ sót ca ác tính là lỗi nguy hiểm $\Rightarrow$ cải thiện bằng hạ ngưỡng phiếu hoặc SMOTE
+\end{cbox}
+\end{column}
+\end{columns}
+\end{frame}
+
+% =====================================================================
+% 12. RANH GIỚI QUYẾT ĐỊNH
+% =====================================================================
+\begin{frame}{Ranh giới quyết định (TN6)}
+\begin{cbox}[navy]{KNN trên 2 thành phần chính (PCA giữ 63,4\% phương sai) -- đỏ: ác tính, xanh: lành tính}
+  \centering\includegraphics[width=0.72\linewidth]{fig_boundary.png}
+\end{cbox}
+\begin{columns}[T,totalwidth=\textwidth]
+\begin{column}{0.31\textwidth}
+\begin{cbox}[orange]{K = 1}
+  Gồ ghề, “ốc đảo” quanh nhiễu; train \ho{100\%}, test 91,2\%
+\end{cbox}
+\end{column}
+\begin{column}{0.31\textwidth}
+\begin{cbox}[teal]{K = 15}
+  Mượt hơn, hết ốc đảo; train 95,4\%, test 93,9\%
+\end{cbox}
+\end{column}
+\begin{column}{0.31\textwidth}
+\begin{cbox}[green]{K = 50}
+  Gần như đường cong trơn; train 93,2\%, test 94,7\%
+\end{cbox}
+\end{column}
+\end{columns}
+\end{frame}
+
+% =====================================================================
+% 13. SO SÁNH THUẬT TOÁN
+% =====================================================================
+\begin{frame}{So sánh KNN với các thuật toán khác (TN7)}
+\begin{columns}[T,totalwidth=\textwidth]
+\begin{column}{0.53\textwidth}
+\begin{cbox}[navy]{Kết quả (\%) -- cùng chuẩn hóa, cùng cách chia dữ liệu}
+\scriptsize\centering
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+\textbf{Thuật toán} & \textbf{CV} & \textbf{Test} & \textbf{F1 ác tính} & \textbf{Dự đoán}\\
+\midrule
+Logistic Regression & 98,24 & \textbf{98,25} & 97,62 & 0,3 ms\\
+SVM (RBF) & 97,37 & \textbf{98,25} & 97,62 & 0,9 ms\\
+\hl{KNN (K = 11)} & 96,93 & \hl{97,37} & 96,30 & \ho{1,1 ms}\\
+Naive Bayes & 93,20 & 92,98 & 90,48 & 0,3 ms\\
+Decision Tree & 92,53 & 91,23 & 88,64 & 0,3 ms\\
+\bottomrule
+\end{tabular}
+\end{cbox}
+\end{column}
+\begin{column}{0.44\textwidth}
+\begin{tbox}[navy]
+  \centering\includegraphics[width=\linewidth]{fig_compare.png}
+\end{tbox}
+\end{column}
+\end{columns}
+\begin{cbox}[orange]{Nhận xét}
+\begin{columns}[T,totalwidth=\textwidth]
+\begin{column}{0.48\textwidth}
+\begin{itemize}\setlength\itemsep{0.1em}
+  \item KNN \textbf{xếp thứ 3/5}, chỉ kém LogReg và SVM \textbf{1 mẫu} trên tập test
+  \item Hơn rõ Naive Bayes (đặc trưng tương quan mạnh) và cây quyết định (dễ overfit)
+\end{itemize}
+\end{column}
+\begin{column}{0.48\textwidth}
+\begin{itemize}\setlength\itemsep{0.1em}
+  \item Hai lớp gần tách tuyến tính $\Rightarrow$ mô hình tuyến tính có lợi thế
+  \item KNN huấn luyện tức thời nhưng \ho{dự đoán chậm nhất}
+\end{itemize}
+\end{column}
+\end{columns}
+\end{cbox}
+\end{frame}
+
+% =====================================================================
+% 13. THỜI GIAN & TỔNG HỢP
+% =====================================================================
+\begin{frame}{Thời gian dự đoán \& tổng hợp kết quả (TN8)}
+\begin{columns}[T,totalwidth=\textwidth]
+\begin{column}{0.5\textwidth}
+\begin{cbox}[navy]{Thời gian dự đoán 200 điểm theo $n$ (d = 30)}
+  \centering\includegraphics[width=\linewidth]{fig_timing.png}
+  \raggedright\footnotesize
+  Tăng \textbf{tuyến tính} theo $n$; \ho{KD-Tree chậm hơn} duyệt toàn bộ ở 30 chiều (lời nguyền số chiều)
+\end{cbox}
+\end{column}
+\begin{column}{0.47\textwidth}
+\begin{cbox}[green]{Tổng hợp}
+\footnotesize
+\begin{tabular}{@{}l p{0.7\linewidth}@{}}
+TN1 & Tự cài đặt khớp 100\%\\
+TN2 & K = 11 tốt nhất (CV 96,93\%)\\
+TN3 & Chuẩn hóa: +3,5 điểm \% test\\
+TN4 & Euclid $\approx$ Manhattan $>$ Cosine $>$ Chebyshev\\
+TN5 & Acc 97,37\%, Recall ác tính 92,86\%\\
+TN6 & K điều khiển độ mượt ranh giới\\
+TN7 & Hạng 3/5 thuật toán\\
+TN8 & Dự đoán chậm khi $n$ lớn\\
+\end{tabular}
+\end{cbox}
+\end{column}
+\end{columns}
+\end{frame}
+
+% =====================================================================
+% 14. KẾT LUẬN
+% =====================================================================
+\begin{frame}{Kết luận \& Hướng phát triển}
+\begin{columns}[T,totalwidth=\textwidth]
+\begin{column}{0.48\textwidth}
+\begin{cbox}[green]{Điểm mạnh}
+\begin{itemize}\setlength\itemsep{0em}
+  \item Đơn giản, trực quan, dễ giải thích
+  \item Không cần huấn luyện, thêm dữ liệu dễ dàng
+  \item Học được ranh giới phi tuyến
+  \item Phân lớp, hồi quy, nhiều lớp; lý thuyết vững
+\end{itemize}
+\end{cbox}
+\begin{cbox}[navy]{Kết quả đạt được}
+  Trình bày đầy đủ lý thuyết + ví dụ; tự cài đặt KNN; 8 thí nghiệm; accuracy \hl{97,37\%} trên dữ liệu ung thư vú
+\end{cbox}
+\end{column}
+\begin{column}{0.48\textwidth}
+\begin{cbox}[orange]{Điểm yếu}
+\begin{itemize}\setlength\itemsep{0em}
+  \item Dự đoán chậm, tốn bộ nhớ khi $n$ lớn
+  \item Nhạy với thang đo, nhiễu, đặc trưng thừa
+  \item Kém ở dữ liệu nhiều chiều
+  \item Phải chọn K, độ đo; thiên vị lớp đông
+\end{itemize}
+\end{cbox}
+\begin{cbox}[red]{Hướng phát triển}
+  Dữ liệu lớn hơn (MNIST) + PCA $\cdot$ SMOTE / hạ ngưỡng để tăng Recall $\cdot$ học độ đo (LMNN) $\cdot$ FAISS, HNSW
+\end{cbox}
+\end{column}
+\end{columns}
+\end{frame}
+
+% =====================================================================
+% 15. HỎI ĐÁP & TÀI LIỆU
+% =====================================================================
+\begin{frame}{Hỏi -- Đáp \& Tài liệu tham khảo}
+\vfill
+\begin{columns}[c,totalwidth=\textwidth]
+\begin{column}{0.55\textwidth}
+\begin{cbox}[navy]{Tài liệu tham khảo chính}
+\scriptsize
+\begin{tabular}{@{}p{1.3em} p{0.88\linewidth}@{}}
+\nbox{1} & Cover, T., Hart, P. (1967). Nearest neighbor pattern classification. \textit{IEEE Trans. Information Theory}.\\[0.3em]
+\nbox{2} & Dudani, S. A. (1976). The distance-weighted k-nearest-neighbor rule. \textit{IEEE Trans. SMC}.\\[0.3em]
+\nbox{3} & Wu, X. et al. (2008). Top 10 algorithms in data mining. \textit{Knowledge and Information Systems}.\\[0.3em]
+\nbox{4} & Street, W. N., Wolberg, W. H., Mangasarian, O. L. (1993). Nuclear feature extraction for breast tumor diagnosis. \textit{SPIE}.\\[0.3em]
+\nbox{5} & Pedregosa, F. et al. (2011). Scikit-learn: Machine Learning in Python. \textit{JMLR}.\\
+\end{tabular}
+\end{cbox}
+\end{column}
+\begin{column}{0.4\textwidth}
+\begin{cbox}[teal]{Thảo luận}
+\centering\vspace{0.6em}
+{\color{navy}\bfseries\Large CẢM ƠN THẦY/CÔ\\ VÀ CÁC BẠN!\par}
+\vspace{0.6em}
+{\small Hỏi -- Đáp \& Thảo luận\par}
+\vspace{0.6em}
+\end{cbox}
+\end{column}
+\end{columns}
+\vfill
+\end{frame}
+
+\end{document}
